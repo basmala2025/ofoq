@@ -1,0 +1,38 @@
+<!-- dashboard-page.component.html -->
+<div class="container">
+  <div class="welcome-banner">
+    <h1>Welcome Back!</h1>
+    <p>You have {{ stats.available }} exams available. Good luck!</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-card-header">Available Exams <i class="fas fa-book-open"></i></div>
+      <div class="stat-value">{{ stats.available }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-header">Completed <i class="fas fa-check-circle"></i></div>
+      <div class="stat-value">{{ stats.completed }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-header">Average Score <i class="fas fa-chart-bar"></i></div>
+      <div class="stat-value">{{ stats.average }}%</div>
+    </div>
+  </div>
+
+  <div class="exams-section">
+    <h2>Available Exams</h2>
+    <div class="exam-card" *ngFor="let exam of exams">
+      <div class="exam-header"> 
+        <div class="exam-info">
+          <div class="exam-tags">
+            <span class="tag tag-course">{{ exam.course }}</span>
+            <span class="tag tag-time"> {{ exam.time }} min</span>
+          </div>
+          <div class="exam-title">{{ exam.title }}</div>
+        </div>
+        <button class="btn btn-primary" routerLink="/exam">Start Exam</button>
+      </div>
+    </div>
+  </div>
+</div>

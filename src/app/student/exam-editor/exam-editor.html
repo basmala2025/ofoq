@@ -1,0 +1,51 @@
+exam-editor.component.html
+<div class="editor-page">
+  <div class="editor-header">
+    <div class="editor-title">
+      <h2>Binary Trees Quiz</h2>
+      <p>Implement a function to find the height of a binary tree</p>
+    </div>
+    <div class="editor-controls">
+      <div class="timer">
+        <mat-icon>access_time</mat-icon>
+        <span>{{ timerDisplay }}</span>
+      </div>
+      <mat-form-field appearance="fill">
+        <mat-label>Language</mat-label>
+        <mat-select [(value)]="language" (valueChange)="onLanguageChange()">
+          <mat-option *ngFor="let lang of languages" [value]="lang.value">
+            {{ lang.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <div class="editor-content">
+    <div class="problem-panel">
+      <h3>Problem Description</h3>
+      <p>Write a function that calculates the height of a binary tree...</p>
+    </div>
+
+     <div class="code-panel">
+      <div #editorContainer class="monaco-editor-container"></div>
+
+      <div class="editor-actions">
+        <button mat-raised-button color="primary" (click)="runCode()">
+          <mat-icon>play_arrow</mat-icon> Run Code
+        </button>
+             <!-- <button mat-raised-button color="accent" (click)="router.navigate(['/results'])">
+          <mat-icon>send</mat-icon> Submit Solution
+        </button>
+        <button mat-stroked-button (click)="router.navigate(['/dashboard'])" class="exit-btn">
+          Exit Exam
+        </button> -->
+      </div>
+
+      <div class="output-console">
+        <h4>Output:</h4>
+        <pre>{{ output }}</pre>
+      </div>
+    </div>
+  </div>
+</div>

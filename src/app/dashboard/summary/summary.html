@@ -1,0 +1,335 @@
+<app-navbar></app-navbar>
+
+<div class="summary-container">
+
+  <div class="summary-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1 class="summary-title">Session Summary</h1>
+        <p class="summary-subtitle">Complete analysis and insights from your session</p>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-secondary" (click)="downloadReport()">
+          <span>📥</span> Download Report
+        </button>
+        <button class="btn btn-secondary" (click)="exportToCSV()">
+          <span>📄</span> Export CSV
+        </button>
+        <button class="submit-btn" (click)="backToDashboard()">
+          <span>🏠</span> Back to Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-icon">📚</span>
+        <div class="info-content">
+          <div class="info-label">Course</div>
+          <div class="info-value">{{ summary?.courseName }}</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🏫</span>
+        <div class="info-content">
+          <div class="info-label">Room</div>
+          <div class="info-value">{{ summary?.roomName }}</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">📅</span>
+        <div class="info-content">
+          <div class="info-label">Date</div>
+          <div class="info-value">{{ sessionDate }}</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">⏰</span>
+        <div class="info-content">
+          <div class="info-label">Duration</div>
+          <div class="info-value">{{ summary?.sessionDuration }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="metrics-overview">
+    <div class="metric-card primary">
+      <div class="metric-icon-large">👥</div>
+      <div class="metric-value-large">{{ summary?.totalStudents }}</div>
+      <div class="metric-label-large">Total Students</div>
+    </div>
+
+    <div class="metric-card success">
+      <div class="metric-icon-large">✅</div>
+      <div class="metric-value-large">{{ summary?.presentStudents }}</div>
+      <div class="metric-label-large">Present</div>
+      <div class="metric-percentage">{{ summary?.attendanceRate }}%</div>
+    </div>
+
+    <div class="metric-card warning">
+      <div class="metric-icon-large">🎯</div>
+      <div class="metric-value-large">{{ summary?.averageFocus }}%</div>
+      <div class="metric-label-large">Average Focus</div>
+    </div>
+
+    <div class="metric-card" [style.borderColor]="getEngagementColor()">
+      <div class="metric-icon-large">⭐</div>
+      <div class="metric-value-large" [style.color]="getEngagementColor()">{{ engagementScore }}%</div>
+      <div class="metric-label-large">Engagement Score</div>
+      <div class="metric-badge" [style.background]="getEngagementColor()">{{ getEngagementLevel() }}</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+
+    <div class="chart-card full-width">
+      <div class="chart-header">
+        <h3 class="chart-title">📈 Focus Timeline</h3>
+        <div class="chart-legend">
+          <span class="legend-item">
+            <span class="legend-dot" style="background: #7113c8;"></span>
+            Actual Focus
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot" style="background: #10b981;"></span>
+            Average Line
+          </span>
+        </div>
+      </div>
+      <div class="chart-container-large">
+        <canvas #focusTimelineCanvas></canvas>
+      </div>
+      <div class="chart-insights">
+        <div class="insight-badge success">
+          <span class="insight-icon">📊</span>
+          <span>Peak Focus: <strong>{{ peakFocus }}%</strong></span>
+        </div>
+        <div class="insight-badge danger">
+          <span class="insight-icon">📉</span>
+          <span>Lowest: <strong>{{ lowestFocus }}%</strong></span>
+        </div>
+        <div class="insight-badge info">
+          <span class="insight-icon">📏</span>
+          <span>Variance: <strong>±{{ focusVariance }}%</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">👥 Attendance Breakdown</h3>
+      </div>
+      <div class="chart-container-medium">
+        <canvas #attendancePieCanvas></canvas>
+      </div>
+      <div class="chart-stats">
+        <div class="stat-row">
+          <span class="stat-dot" style="background: #10b981;"></span>
+          <span class="stat-text">Present: <strong>{{ summary?.presentStudents }}</strong></span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-dot" style="background: #ef4444;"></span>
+          <span class="stat-text">Absent: <strong>{{ summary?.absentStudents }}</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">🎯 Performance Radar</h3>
+      </div>
+      <div class="chart-container-medium">
+        <canvas #focusRadarCanvas></canvas>
+      </div>
+      <div class="chart-description">
+        <p>Comprehensive view of all session metrics normalized to 100%</p>
+      </div>
+    </div>
+
+    <div class="chart-card full-width">
+      <div class="chart-header">
+        <h3 class="chart-title">📊 Student Performance Distribution</h3>
+      </div>
+      <div class="chart-container-medium">
+        <canvas #performanceBarCanvas></canvas>
+      </div>
+      <div class="performance-summary">
+        <div class="perf-item success">
+          <div class="perf-number">{{ highPerformers }}</div>
+          <div class="perf-label">High Performers</div>
+          <div class="perf-desc">Focus ≥ 80%</div>
+        </div>
+        <div class="perf-item warning">
+          <div class="perf-number">{{ moderatePerformers }}</div>
+          <div class="perf-label">Moderate</div>
+          <div class="perf-desc">Focus 60-79%</div>
+        </div>
+        <div class="perf-item danger">
+          <div class="perf-number">{{ needsAttention }}</div>
+          <div class="perf-label">Needs Attention</div>
+          <div class="perf-desc">Focus < 60%</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="statistics-section">
+    <h2 class="section-title">📊 Detailed Statistics</h2>
+    <div class="stats-grid">
+
+      <div class="stat-card">
+        <div class="stat-icon">📈</div>
+        <div class="stat-content">
+          <div class="stat-value" style="color: #10b981;">{{ peakFocus }}%</div>
+          <div class="stat-label">Peak Focus</div>
+          <div class="stat-description">Highest focus level achieved</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">📉</div>
+        <div class="stat-content">
+          <div class="stat-value" style="color: #ef4444;">{{ lowestFocus }}%</div>
+          <div class="stat-label">Lowest Focus</div>
+          <div class="stat-description">Minimum focus recorded</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">📏</div>
+        <div class="stat-content">
+          <div class="stat-value" style="color: #3b82f6;">±{{ focusVariance }}%</div>
+          <div class="stat-label">Focus Variance</div>
+          <div class="stat-description">Standard deviation of focus</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-content">
+          <div class="stat-value" style="color: #8b5cf6;">{{ summary?.sessionDuration }}</div>
+          <div class="stat-label">Session Duration</div>
+          <div class="stat-description">Total time elapsed</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-content">
+          <div class="stat-value" style="color: #f59e0b;">{{ summary?.attendanceRate }}%</div>
+          <div class="stat-label">Attendance Rate</div>
+          <div class="stat-description">Students present ratio</div>
+        </div>
+      </div>
+
+      <div class="stat-card highlight">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-content">
+          <div class="stat-value" [style.color]="getEngagementColor()">{{ engagementScore }}%</div>
+          <div class="stat-label">Overall Score</div>
+          <div class="stat-description">{{ getEngagementLevel() }}</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="recommendations-section">
+    <h2 class="section-title">💡 Recommendations & Insights</h2>
+    <div class="recommendations-grid">
+
+      <div class="recommendation-card" [class.success]="summary!.attendanceRate >= 80">
+        <div class="rec-header">
+          <span class="rec-icon">{{ summary!.attendanceRate >= 80 ? '✅' : '⚠️' }}</span>
+          <h4 class="rec-title">Attendance</h4>
+        </div>
+        <p class="rec-text">
+          @if(summary!.attendanceRate >= 80) {
+            Excellent attendance! Keep up the good work and maintain engagement strategies.
+          } @else if(summary!.attendanceRate >= 60) {
+            Good attendance rate. Consider sending reminders to improve further.
+          } @else {
+            Low attendance detected. Follow up with absent students and review scheduling.
+          }
+        </p>
+      </div>
+
+      <div class="recommendation-card" [class.success]="summary!.averageFocus >= 70">
+        <div class="rec-header">
+          <span class="rec-icon">{{ summary!.averageFocus >= 70 ? '🎯' : '📚' }}</span>
+          <h4 class="rec-title">Focus Level</h4>
+        </div>
+        <p class="rec-text">
+          @if(summary!.averageFocus >= 80) {
+            Outstanding focus levels! Students are highly engaged with the material.
+          } @else if(summary!.averageFocus >= 60) {
+            Moderate focus. Consider adding interactive elements or short breaks.
+          } @else {
+            Focus needs improvement. Try interactive activities, discussions, or multimedia.
+          }
+        </p>
+      </div>
+
+      <div class="recommendation-card" [class.success]="focusVariance < 15">
+        <div class="rec-header">
+          <span class="rec-icon">{{ focusVariance < 15 ? '📊' : '📈' }}</span>
+          <h4 class="rec-title">Consistency</h4>
+        </div>
+        <p class="rec-text">
+          @if(focusVariance < 15) {
+            Great consistency! Students maintained steady focus throughout the session.
+          } @else if(focusVariance < 25) {
+            Moderate fluctuation in focus. Consider pacing adjustments or energy breaks.
+          } @else {
+            High variance detected. Review session structure and add engagement checkpoints.
+          }
+        </p>
+      </div>
+
+      <div class="recommendation-card" [class.success]="engagementScore >= 75">
+        <div class="rec-header">
+          <span class="rec-icon">{{ engagementScore >= 75 ? '⭐' : '💪' }}</span>
+          <h4 class="rec-title">Overall Performance</h4>
+        </div>
+        <p class="rec-text">
+          @if(engagementScore >= 80) {
+            Exceptional session! All metrics indicate strong student engagement.
+          } @else if(engagementScore >= 60) {
+            Good overall performance. Focus on areas showing lower metrics.
+          } @else {
+            Performance needs attention. Review teaching methods and student feedback.
+          }
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="students-section">
+    <h2 class="section-title">👥 Student Attendance List</h2>
+    <div class="students-table">
+      <div class="table-header">
+        <div class="table-cell">Name</div>
+        <div class="table-cell">Status</div>
+      </div>
+      @for(student of summary?.students; track student.id) {
+        <div class="table-row" [class.absent]="!student.present">
+          <div class="table-cell">
+            <div class="student-avatar-small">{{ student.name.charAt(0) }}</div>
+            <span>{{ student.name }}</span>
+          </div>
+          <div class="table-cell">
+            <span class="status-badge" [class.present]="student.present">
+              {{ student.present ? '✅ Present' : '❌ Absent' }}
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+</div>

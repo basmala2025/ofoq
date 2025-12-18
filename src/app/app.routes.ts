@@ -1,0 +1,23 @@
+import { Routes } from '@angular/router';
+import { Signup } from './auth/signup/signup';
+import { Login } from './auth/login/login';
+import { Home } from './home/home';
+import { Dashboard } from './dashboard/dashboard';
+import { LiveDashboard } from './dashboard/livedashboard/livedashboard';
+import { SessionSummary } from './dashboard/summary/summary';
+import { DashboardPageComponent } from './student/dashboard-page/dashboard-page';
+export const routes: Routes = [
+  { path: '', redirectTo: '/home', pathMatch: 'full' },
+    {path:'home',component:Home},
+    { path: 'signup', component: Signup },
+    { path: 'login', component: Login },
+     { path: 'dashboard', component: Dashboard },
+     { path: 'livedashboard', component: LiveDashboard },
+     { path: 'summary', component: SessionSummary },
+     { path: 'courses', loadComponent: () => import('./student/course-selection/course-selection').then(m => m.CoursesPageComponent) },
+      { path: 'dashboardstudent', loadComponent: () => import('./student/dashboard-page/dashboard-page').then(m => m.DashboardPageComponent) },
+      { path: 'exam', loadComponent: () => import('./student/exam-editor/exam-editor').then(m => m.ExamEditorComponent) },
+  // { path: 'results', loadComponent: () => import('./components/results/results.component').then(m => m.ResultsComponent) },
+];
+
+
