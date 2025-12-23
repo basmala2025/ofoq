@@ -13,11 +13,9 @@
             padding: 20px;
 
           }
-          .con{
-          background: linear-gradient(135deg, #5f369e 0%, #764ba2 100%);
-        }
+
         .container {
-            background: white;
+            /* background: white; */
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             max-width: 450px;
@@ -25,7 +23,7 @@
             padding: 40px;
             animation: fadeIn 0.5s ease;
             margin-left: 35%;
-            margin-top: 90px;
+            margin-top: 50px;
         }
 
 
@@ -239,7 +237,7 @@
         .copyright {
             text-align: center;
             margin-top: 20px;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(14, 14, 14, 0.8);
             font-size: 13px;
         }
 

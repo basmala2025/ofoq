@@ -1,41 +1,32 @@
-<nav>
-<div class="nav-container">
-    <img src="logo.jpeg" alt="Logo" width="80px" class="logo" [routerLink]="['/home']">
 
-    <!-- Burger -->
-    <div class="burger" (click)="toggleMenu()">
+  <div class="nav-container">
+    <div class="logo-wrapper" routerLink="/home">
+      <img src="logo-removebg-preview.png" alt="EduPulse" class="logo">
+    </div>
+
+    <div class="burger" (click)="toggleMenu()" [class.open]="isMenuOpen">
       <div></div>
       <div></div>
       <div></div>
     </div>
 
-    <!-- Menu -->
-    <ul class="nav-menu" [ngClass]="{ 'active': isMenuOpen }">
-      <li><a routerLink="/home">Home</a></li>
-      <li><a routerLink="/about">About</a></li>
-      <li><a routerLink="/services">Services</a></li>
-      <li><a routerLink="/contact">Contact</a></li>
+    <ul class="nav-menu" [class.active]="isMenuOpen">
+      <li><a routerLink="/home" (click)="closeMenu()">Home</a></li>
+      <li><a routerLink="/about" (click)="closeMenu()">About</a></li>
+      <li><a routerLink="/services" (click)="closeMenu()">Services</a></li>
+      <li><a routerLink="/contact" (click)="closeMenu()">Contact</a></li>
+
+      <li class="mobile-only">
+        <div class="mobile-auth-btns">
+          <button class="button btn-login" routerLink="/login" (click)="closeMenu()">Log In</button>
+          <button class="submit-btn" routerLink="/signup" (click)="closeMenu()">Sign Up</button>
+        </div>
+      </li>
     </ul>
 
-
-    <!-- Auth buttons -->
-    <div class="auth-buttons" >
-      <button class="button" [routerLink]="['/login']">Log In</button>
-      <button class="cssbuttons-io-button"
-        [routerLink]="['/signup']"
->
-        Sign Up
-        <div class="icon">
-          <svg height="24" width="24" viewBox="0 0 24 24">
-            <path d="M0 0h24v24H0z" fill="none"></path>
-            <path
-              d="M16.172 11l-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z"
-              fill="currentColor"
-            ></path>
-          </svg>
-        </div>
-      </button>
+    <div class="auth-buttons desktop-only">
+      <button class="button btn-login" routerLink="/login">Log In</button>
+      <button class="submit-btn" routerLink="/signup">Sign Up</button>
     </div>
   </div>
-</nav>
 

@@ -1,17 +1,29 @@
-import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { RouterModule ,RouterLinkActive} from '@angular/router';
 
 @Component({
   selector: 'app-navbar',
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  standalone: true,
+  imports: [CommonModule, RouterModule],
   templateUrl: './navbar.html',
-  styleUrl: './navbar.css'
+  styleUrls: ['./navbar.css']
 })
 export class Navbar {
-isMenuOpen = false;
+  isMenuOpen = false;
 
-  toggleMenu() {
-    this.isMenuOpen = !this.isMenuOpen;
+ toggleMenu() {
+  this.isMenuOpen = !this.isMenuOpen;
+
+  if (this.isMenuOpen) {
+    document.body.classList.add('menu-open-body');
+  } else {
+    document.body.classList.remove('menu-open-body');
   }
+}
+
+closeMenu() {
+  this.isMenuOpen = false;
+  document.body.classList.remove('menu-open-body');
+}
 }
