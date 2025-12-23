@@ -1,5 +1,4 @@
-// exam-editor.component.ts
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,135 +6,205 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 import loader from '@monaco-editor/loader';
-// 1. Define the necessary type for the Monaco namespace
-// (This requires 'monaco-editor' to be installed)
+
 type Monaco = typeof import('monaco-editor');
 
 @Component({
-  selector: 'app-exam-editor',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule, MatSelectModule, MatIconModule],
-  templateUrl: './exam-editor.html',
-  styleUrls: ['./exam-editor.css']
+  selector: 'app-exam-editor',
+  standalone: true,
+  imports: [CommonModule, FormsModule, MatButtonModule, MatSelectModule, MatIconModule],
+  templateUrl: './exam-editor.html',
+  styleUrls: ['./exam-editor.css']
 })
 export class ExamEditorComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('editorContainer', { static: true }) editorContainer!: ElementRef;
+  @ViewChild('editorContainer', { static: true }) editorContainer!: ElementRef;
+  @ViewChild('videoElement') videoElement!: ElementRef;
 
-  // 2. Declare class properties for the editor instance and the namespace
-  // We use 'any' for the editor instance for simplicity, but 'editor.IStandaloneCodeEditor'
-  // is the correct type if imported from 'monaco-editor'
-  editor: any;
-  private monacoNamespace: Monaco | null = null; // Property to store the monaco object (Fix TS2304)
+  editor: any;
+  private monacoNamespace: Monaco | null = null;
+  private mediaStream: MediaStream | null = null;
 
-  language = 'python';
-  timeRemaining = 42 * 60 + 35;
-  timerDisplay = '42:35';
-  private timerInterval: any;
+  // --- Exam State ---
+  violationCount = 0;
+  isPanicMode = false;
+  cvActive = true;
+  securityMessage = '';
+  showSecurityToast = false;
 
-  languages = [
-    { value: 'python', label: 'Python' },
-    { value: 'cpp', label: 'C++' },
-    { value: 'java', label: 'Java' }
-  ];
+  language = 'python';
+  timeRemaining = 42 * 60 + 35;
+  timerDisplay = '42:35';
+  private timerInterval: any;
 
-  output = `Test Case 1: Passed ✓
-Test Case 2: Passed ✓
-Test Case 3: Failed ✗ - Expected 4, got 3`;
+  languages = [
+    { value: 'python', label: 'Python' },
+    { value: 'cpp', label: 'C++' },
+    { value: 'java', label: 'Java' }
+  ];
 
-  ngAfterViewInit() {
-    // 3. Use the defined type 'Monaco' for the parameter (Fix TS7006)
-    loader.init().then((monaco: Monaco) => {
-      this.monacoNamespace = monaco; // Store the object (Required for step 4)
+  output = `System Initialized. All security protocols are active.`;
 
-      // Theme definition and editor creation (using the local 'monaco' object)
-      monaco.editor.defineTheme('customDark', {
-        base: 'vs-dark',
-        inherit: true,
-        rules: [
-          { token: 'keyword', foreground: 'C586C0' },
-          { token: 'string', foreground: 'CE9178' },
-          { token: 'comment', foreground: '6A9955' },
-        ],
-        colors: {
-          'editor.background': '#1E1E2F',
-          'editorLineNumber.foreground': '#858585',
-        }
-      });
+  constructor(private router: Router) {}
 
-      this.editor = monaco.editor.create(this.editorContainer.nativeElement, {
-        value: this.getTemplateCode('python'),
-        language: 'python',
-        theme: 'customDark',
-        automaticLayout: true,
-        fontSize: 15,
-        minimap: { enabled: true },
-      });
-    });
+  // --- 🔒 Security Protocols (Anti-Cheat) ---
 
-    this.startTimer();
-  }
+  @HostListener('document:contextmenu', ['$event'])
+  preventRightClick(e: MouseEvent) { e.preventDefault(); }
 
-  getTemplateCode(lang: string): string {
-    // ... (Template code remains the same)
-    const templates: any = {
-      python: `class Solution:
-    def maxDepth(self, root):
-        if not root:
-            return 0
-        return max(self.maxDepth(root.left), self.maxDepth(root.right)) + 1`,
-      cpp: `#include <bits/stdc++.h>
-using namespace std;
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboard(e: KeyboardEvent) {
+    const key = e.key.toLowerCase();
+    // قفل Ctrl+C, Ctrl+V, Ctrl+A, Ctrl+X, Ctrl+S, F12
+    const forbiddenKeys = ['c', 'v', 'a', 'x', 's'];
+    if ((e.ctrlKey && forbiddenKeys.includes(key)) || e.key === 'F12') {
+      e.preventDefault();
+      this.recordViolation('Shortcut Blocked: Action not allowed.');
+    }
+  }
 
-class Solution {
-public:
-    int maxDepth(TreeNode* root) {
-        if (!root) return 0;
-        return max(maxDepth(root->left), maxDepth(root->right)) + 1;
-    }
-};`,
-      java: `class Solution {
-    public int maxDepth(TreeNode root) {
-        if (root == null) return 0;
-        return Math.max(maxDepth(root.left), maxDepth(root.right)) + 1;
-    }
-}`
-    };
-    return templates[lang] || '';
-  }
+  @HostListener('document:visibilitychange')
+  onVisibilityChange() {
+    if (document.hidden) {
+      this.isPanicMode = true;
+      this.recordViolation('Tab Switch Detected! Screen blurred for security.');
+    } else {
+      setTimeout(() => this.isPanicMode = false, 2000);
+    }
+  }
 
-  onLanguageChange() {
-    // 4. Use the class property 'this.monacoNamespace' instead of the inaccessible local 'monaco'
-    if (this.editor && this.monacoNamespace) {
-      const model = this.editor.getModel();
-      this.monacoNamespace.editor.setModelLanguage(model, this.language); // Fix TS2304
-      this.editor.setValue(this.getTemplateCode(this.language));
-    }
-  }
+  @HostListener('window:blur')
+  onWindowBlur() {
+    this.isPanicMode = true;
+    this.recordViolation('Focus Lost! Please stay on the exam screen.');
+  }
 
-  // ... (Rest of the methods remain the same)
+  @HostListener('window:focus')
+  onWindowFocus() {
+    this.isPanicMode = false;
+  }
 
-  runCode() {
-    this.output = `Running tests...\n\nTest Case 1: Passed ✓\nTest Case 2: Passed ✓\nTest Case 3: Failed ✗ - Expected 4, got 3\n\nExecution time: 0.23ms`;
-  }
+  recordViolation(msg: string) {
+    this.violationCount++;
+    this.securityMessage = msg;
+    this.showSecurityToast = true;
 
-  startTimer() {
-    this.timerInterval = setInterval(() => {
-      if (this.timeRemaining > 0) {
-        this.timeRemaining--;
-        const m = Math.floor(this.timeRemaining / 60);
-        const s = this.timeRemaining % 60;
-        this.timerDisplay = `${m}:${s.toString().padStart(2, '0')}`;
-      } else {
-        clearInterval(this.timerInterval);
-        alert('Time is up!');
-      }
-    }, 1000);
-  }
+    setTimeout(() => { this.showSecurityToast = false; }, 4000);
 
-  ngOnDestroy() {
-    if (this.timerInterval) clearInterval(this.timerInterval);
-    if (this.editor) this.editor.dispose();
-  }
+    if (this.violationCount >= 3) {
+      this.submitSolution();
+    }
+  }
 
-  constructor(private router: Router) {}
+  // --- 📸 Camera Management ---
+
+  async initCamera() {
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (this.videoElement && this.videoElement.nativeElement) {
+        this.videoElement.nativeElement.srcObject = this.mediaStream;
+      }
+    } catch (err) {
+      this.recordViolation('Camera Error: Camera access is mandatory for this exam.');
+    }
+  }
+
+  private stopCamera() {
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+      if (this.videoElement && this.videoElement.nativeElement) {
+        this.videoElement.nativeElement.srcObject = null;
+      }
+      console.log('Camera stopped.');
+    }
+  }
+
+  // --- 💻 Editor & LifeCycle ---
+
+  ngAfterViewInit() {
+    this.initCamera();
+    loader.init().then((monaco: Monaco) => {
+      this.monacoNamespace = monaco;
+      this.editor = monaco.editor.create(this.editorContainer.nativeElement, {
+        value: this.getTemplateCode('python'),
+        language: 'python',
+        theme: 'vs-dark',
+        automaticLayout: true,
+        contextmenu: false,
+        fontSize: 15,
+        quickSuggestions: false,
+        wordBasedSuggestions: 'off',
+        minimap: { enabled: false }
+      });
+    });
+    this.startTimer();
+  }
+
+  enterFullScreen() {
+    const el = document.documentElement as any;
+    if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  }
+
+  // --- 🏁 Exam Actions ---
+
+  submitSolution() {
+    this.stopCamera();
+
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    }
+
+    this.router.navigate(['/results'], { replaceUrl: true });
+  }
+
+  exitExam() {
+    if (confirm('Are you sure? Progress will not be saved.')) {
+      this.stopCamera();
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      this.router.navigate(['/dashboardstudent']);
+    }
+  }
+
+  startTimer() {
+    this.timerInterval = setInterval(() => {
+      if (this.timeRemaining > 0) {
+        this.timeRemaining--;
+        const m = Math.floor(this.timeRemaining / 60);
+        const s = this.timeRemaining % 60;
+        this.timerDisplay = `${m}:${s.toString().padStart(2, '0')}`;
+      } else {
+        clearInterval(this.timerInterval);
+        this.submitSolution();
+      }
+    }, 1000);
+  }
+
+  runCode() {
+    this.output = `Running tests...\nAll test cases passed ✓\nExecution time: 0.23ms`;
+  }
+
+  getTemplateCode(lang: string): string {
+    const templates: any = {
+      python: `class Solution:\n    def maxDepth(self, root):\n        # Your code here`,
+      cpp: `class Solution {\npublic:\n    int maxDepth(TreeNode* root) {\n        // Your code here\n    }\n};`,
+      java: `class Solution {\n    public int maxDepth(TreeNode root) {\n        // Your code here\n    }\n}`
+    };
+    return templates[lang] || '';
+  }
+
+  onLanguageChange() {
+    if (this.editor && this.monacoNamespace) {
+      const model = this.editor.getModel();
+      this.monacoNamespace.editor.setModelLanguage(model, this.language);
+      this.editor.setValue(this.getTemplateCode(this.language));
+    }
+  }
+
+  ngOnDestroy() {
+    this.stopCamera();
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    if (this.editor) this.editor.dispose();
+  }
 }

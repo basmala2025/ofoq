@@ -17,7 +17,8 @@ export const routes: Routes = [
      { path: 'courses', loadComponent: () => import('./student/course-selection/course-selection').then(m => m.CoursesPageComponent) },
       { path: 'dashboardstudent', loadComponent: () => import('./student/dashboard-page/dashboard-page').then(m => m.DashboardPageComponent) },
       { path: 'exam', loadComponent: () => import('./student/exam-editor/exam-editor').then(m => m.ExamEditorComponent) },
-  // { path: 'results', loadComponent: () => import('./components/results/results.component').then(m => m.ResultsComponent) },
+  { path: 'results', loadComponent: () => import('./student/results/results').then(m => m.Results) },
+
 ];
 
 
