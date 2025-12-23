@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterModule } from '@angular/router';
+import { Navbar } from "../../navbar/navbar";
 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, RouterModule],
+  imports: [CommonModule, MatCardModule, MatButtonModule, RouterModule, Navbar],
   templateUrl: './dashboard-page.html',
   styleUrls: ['./dashboard-page.css']
 })
