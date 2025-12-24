@@ -8,6 +8,7 @@ import { SessionSummary } from './dashboard/summary/summary';
 import { DashboardPageComponent } from './student/dashboard-page/dashboard-page';
 import { CourseDetails } from './dashboard/course-details/course-details';
 import { Profprofile } from './profprofile/profprofile';
+import { Stdprofile } from './student/stdprofile/stdprofile';
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
     {path:'home',component:Home},
@@ -24,6 +25,7 @@ export const routes: Routes = [
   { path: 'results', loadComponent: () => import('./student/results/results').then(m => m.Results) },
   { path: 'course/:id', component: CourseDetails },
   { path: 'profile', component: Profprofile },
+  { path: 'stdprofile', component: Stdprofile },
 
 ];
 

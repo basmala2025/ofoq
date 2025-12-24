@@ -11,7 +11,8 @@ import { Router, RouterLink } from "@angular/router";
 export class Navbar implements OnInit {
   fullName: string = '';
   displayName: string = '';
-  initials: string = ''; // متغير جديد للحروف الأولى
+  initials: string = '';
+  userRole: string = ''; // متغير جديد لتخزين الدور (student أو professor)
 
   constructor(private router: Router) {}
 
@@ -26,22 +27,40 @@ export class Navbar implements OnInit {
       try {
         const user = JSON.parse(userJson);
         this.fullName = user.fullName || 'User';
-        this.displayName = this.formatName(this.fullName);
-        this.initials = this.getInitials(this.fullName); // استخراج الحروف
+        // جلب الدور من الـ localStorage (تأكدي أن الباك إند يرسله باسم userType أو role)
+        this.userRole = user.userType || user.role || '';
+
+        // استخراج الحروف الأولى
+        this.initials = this.getInitials(this.fullName);
+
+        // تنسيق الاسم وإضافة لقب Dr. إذا كان دكتور
+        let formatted = this.formatName(this.fullName);
+        if (this.userRole === 'professor') {
+          this.displayName = `Dr. ${formatted}`;
+        } else {
+          this.displayName = formatted;
+        }
+
       } catch (e) {
         this.displayName = 'User';
         this.initials = 'U';
       }
-    } else {
-      this.displayName = '';
-      this.initials = '';
     }
   }
 
-  // دالة لتحويل الاسم لحروف (مثلاً: Ahmed Hassan -> AH)
+  // دالة التوجيه بناءً على نوع المستخدم
+  goToProfile(): void {
+    if (this.userRole === 'professor') {
+      this.router.navigate(['/profprofile']); // مسار الدكتور
+    } else {
+      this.router.navigate(['/stdprofile']); // مسار الطالب
+    }
+  }
+
   getInitials(name: string): string {
     return name
       .split(' ')
+      .filter(part => part.length > 0)
       .map(part => part[0])
       .join('')
       .toUpperCase()
@@ -51,14 +70,15 @@ export class Navbar implements OnInit {
   formatName(name: string): string {
     const parts = name.trim().split(' ');
     if (parts.length >= 2) {
-      return `Dr. ${parts[0]} ${parts[1]}`;
+      return `${parts[0]} ${parts[1]}`;
     }
-    return `Dr. ${parts[0] || 'User'}`;
+    return `${parts[0] || 'User'}`;
   }
 
   logout(): void {
     localStorage.removeItem('currentUser');
     this.displayName = '';
+    this.userRole = '';
     this.router.navigate(['/login']);
   }
 }

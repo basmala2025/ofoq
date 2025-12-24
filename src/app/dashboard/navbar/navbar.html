@@ -1,16 +1,22 @@
 <nav class="navbar">
     <div class="logo" routerLink="/" style="cursor: pointer;">
-        <img src="logo-removebg-preview.png" alt="" width="100">
+        <img src="logo-removebg-preview.png" alt="OFOQ Logo" width="100">
     </div>
 
-    @if (displayName) {
-        <div class="user-info" routerLink="/profile">
-            <span class="doctor-name">{{ displayName }}</span>
-            <div class="profile-icon">
-                {{ initials }}
+    <div class="nav-actions">
+        @if (displayName) {
+            <div class="user-info" (click)="goToProfile()" style="cursor: pointer;">
+                <span class="doctor-name">{{ displayName }}</span>
+                <div class="profile-icon">
+                    {{ initials }}
+                </div>
             </div>
-        </div>
-    } @else {
-        <button class="back-btn" routerLink="/login">Login</button>
-    }
+
+            <!-- <button class="logout-link" (click)="logout()">
+                <i class="ph ph-sign-out"></i> Logout
+            </button> -->
+        } @else {
+            <button class="login-btn" routerLink="/login">Login</button>
+        }
+    </div>
 </nav>
