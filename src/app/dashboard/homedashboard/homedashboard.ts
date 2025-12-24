@@ -1,53 +1,26 @@
-import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { Navbar } from "../navbar/navbar";
-interface Course {
-  id: number;
-  name: string;
-  code: string;
-  room: string;
-  sessions: number;
-  selectedRoom?: string;
-}
+import { Component, OnInit, EventEmitter, Output } from '@angular/core';
+import { Data } from '../../services/data';
+import { Course } from '../../models/data.model';
+import { RouterLink } from "@angular/router";
 
 @Component({
   selector: 'app-homedashboard',
-  imports: [FormsModule, CommonModule, Navbar],
   templateUrl: './homedashboard.html',
-  styleUrls: ['./homedashboard.css']
+  styleUrls: ['./homedashboard.css'],
+  imports: [RouterLink]
 })
-export class Homedashboard {
-  // Statistics for summary tiles
-  constructor(private router: Router) {}
+export class homedashboard implements OnInit {
+  courses: Course[] = [];
 
-  stats = {
-    registeredStudents: 142,
-    todaysSessions: 3
-  };
+  @Output() courseSelected = new EventEmitter<Course>();
 
-  // Courses list (you can later load this from a service)
-  courses: Course[] = [
-    { id: 1, name: 'Artificial Intelligence', code: 'AI-401', room: 'A-101', sessions: 2 },
-    { id: 2, name: 'Machine Learning', code: 'ML-202', room: 'B-303', sessions: 1 },
-    { id: 3, name: 'Data Mining', code: 'DM-305', room: 'C-201', sessions: 3 },
-    { id: 4, name: 'Computer Vision', code: 'CV-102', room: 'D-104', sessions: 2 },
-  ];
+  constructor(private dataService: Data) {}
 
-  activateCamera(course: Course) {
-    if (!course.selectedRoom) {
-      alert(`Please select a room for ${course.name}`);
-      return;
-    }
-
-    console.log(`Activating camera for ${course.name} in ${course.selectedRoom}`);
-   this.router.navigate(['/livedashboard'], {
-  queryParams: {
-    course: course.name,
-    room: course.selectedRoom
+  ngOnInit(): void {
+    this.courses = this.dataService.getCourses();
   }
-});
 
-}
+  onCourseClick(course: Course) {
+    this.courseSelected.emit(course);
+  }
 }

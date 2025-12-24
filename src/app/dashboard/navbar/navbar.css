@@ -1,118 +1,72 @@
- * {
+  * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #6A4BCF;
-            --primary-light: #8B6DD9;
-            --accent: #FF8A00;
-            --dark: #1F2937;
-            --light-gray: #F5F7FA;
-            --white: #FFFFFF;
-            --success: #10B981;
-            --warning: #F59E0B;
-            --danger: #EF4444;
-        }
-
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--light-gray);
-            color: var(--dark);
-            line-height: 1.6;
+            background: #f5f7fa;
+            color: #2d3748;
         }
 
-        .page {
-            display: none;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        /* Top Bar */
-        .top-bar {
-            background: white;
+        /* Navigation Bar */
+        .navbar {
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             position: sticky;
             top: 0;
             z-index: 1000;
         }
 
         .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.5rem;
+            font-size: 1.75rem;
             font-weight: 700;
-            color: #6A4BCF;
-
-
+            background: linear-gradient(135deg, #f47545 0%, #5f369e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg,#6A4BCF, #8B6DD9);
-            border-radius: 8px;
+        .user-info {
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.2rem;
-        }
-
-        .top-bar-right {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .icon-btn {
-            background: none;
-            border: none;
+            gap: 1rem;
             cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
             transition: background 0.3s;
-            position: relative;
         }
 
-        .icon-btn:hover {
-            background: var(--light-gray);
+        .user-info:hover {
+            background: #f7fafc;
         }
 
-        .icon-btn svg {
-            width: 24px;
-            height: 24px;
-            stroke: #1F2937;
-
+        .doctor-name {
+            font-weight: 600;
+            color: #2d3748;
         }
 
-        .badge {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: var(--accent);
-            color: white;
+        .profile-icon {
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 0.7rem;
-            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f47545 0%, #5f369e 100%);
             display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
         }
 
-        .lecturer-name {
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            color:#6f37bf;
-            }
-
+        /* Main Content Container */
+        .main-content {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }

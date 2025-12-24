@@ -1,0 +1,77 @@
+<div id="profileView" class="view active">
+    <div class="page-header">
+        <button class="back-btn" routerLink="/dashboard">← Back to Dashboard</button>
+    </div>
+
+    <div class="profile-container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="profile-avatar">{{ doctor.avatar }}</div>
+                <h2 class="page-title" style="font-size: 1.5rem; margin: 0;">{{ doctor.name }}</h2>
+            </div>
+
+            <div class="profile-info">
+                <div class="info-group">
+                    <div class="info-label">Full Name</div>
+                    <div class="info-value">{{ doctor.fullName }}</div>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-label">Academic Email</div>
+                    <div class="info-value">{{ doctor.email }}</div>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-label">Department</div>
+                    <div class="info-value">{{ doctor.department }}</div>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-label">Position</div>
+                    <div class="info-value">{{ doctor.position }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="profile-card" style="margin-bottom: 2rem;">
+                <h3 class="section-title">Assigned Courses</h3>
+                <ul class="course-list">
+                    @for (course of assignedCourses; track course.id) {
+                        <li>
+                            <div>
+                                <div class="course-list-name">{{ course.name }}</div>
+                                <div class="course-list-code">{{ course.code }}</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <div class="profile-card">
+                <h3 class="section-title">Change Password</h3>
+                <form (ngSubmit)="changePassword()">
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" name="current" [(ngModel)]="passwordData.current"
+                               class="form-input" placeholder="Enter current password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" name="new" [(ngModel)]="passwordData.new"
+                               class="form-input" placeholder="Enter new password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" name="confirm" [(ngModel)]="passwordData.confirm"
+                               class="form-input" placeholder="Confirm new password" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Update Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

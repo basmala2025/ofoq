@@ -1,46 +1,17 @@
-<!-- <app-navbar></app-navbar> -->
-<div class="page active">
-  <div class="container">
+<div class="page-header">
     <h1 class="page-title">My Courses</h1>
+    <p class="page-subtitle">Select a course to manage sessions and activities</p>
+</div>
 
-    <!-- Summary Tiles -->
-    <div class="summary-tiles">
-      <div class="tile">
-        <div class="tile-label">Registered Students</div>
-        <div class="tile-value">{{ stats.registeredStudents }}</div>
-      </div>
-      <div class="tile">
-        <div class="tile-label">Today's Sessions</div>
-        <div class="tile-value">{{ stats.todaysSessions }}</div>
-      </div>
-    </div>
-
-    <!-- Courses Grid -->
-   <div class="courses-grid">
-  @for (course of courses; track course.id) {
-    <div class="course-card">
-      <h3 class="course-name">{{ course.name }}</h3>
-      <p style="color: #6B7280; font-size: 0.875rem;">{{ course.code }}</p>
-
-      <div class="course-info">
-        <span>{{ course.room }}</span>
-        <span>{{ course.sessions }} sessions today</span>
-      </div>
-
-      <select class="room-select" [(ngModel)]="course.selectedRoom">
-        <option selected disabled> Select Room</option>
-        <option value="{{ course.room }}">{{ course.room }}</option>
-        <option value="A-305">A-305</option>
-        <option value="B-210">B-210</option>
-      </select>
-
-      <button class="submit-btn" (click)="activateCamera(course)">
-        Activate Camera
-      </button>
-    </div>
-  }
+<div style="margin-left: 5%; margin-right: 5%;">
+ <div class="course-grid">
+    @for (course of courses; track course.id) {
+        <div class="course-card" [routerLink]="['/course', course.id]">
+            <div class="course-icon">{{ course.icon }}</div>
+            <h3 class="course-name">{{ course.name }}</h3>
+            <p class="course-code">{{ course.code }}</p>
+        </div>
+    }
 </div>
 
 </div>
-  </div>
-

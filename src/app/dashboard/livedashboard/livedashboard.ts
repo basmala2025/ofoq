@@ -62,6 +62,7 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
   constructor(private route: ActivatedRoute, private router: Router) {}
 
   ngOnInit(): void {
+    const courseId = Number(this.route.snapshot.paramMap.get('id'));
     this.route.queryParams.subscribe(params => {
       this.courseName = params['course'] || 'Artificial Intelligence';
       this.roomName = params['room'] || 'A-305';
