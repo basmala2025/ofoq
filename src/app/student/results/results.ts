@@ -1,6 +1,5 @@
-import { Component, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule, LocationStrategy } from '@angular/common';
-import { OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -11,18 +10,13 @@ import { Router } from '@angular/router';
   styleUrl: './results.css',
 })
 export class Results implements OnInit {
-  examTitle: string = 'Binary Trees Quiz';
-  category: string = 'Data Structures';
-  score: number = 85;
-  timeTaken: string = '12:45';
-  totalLines: number = 15;
-
-  testCases = [
-    { name: 'Test Case 1: Basic tree', status: 'Passed', passed: true },
-    { name: 'Test Case 2: Single node', status: 'Passed', passed: true },
-    { name: 'Test Case 3: Unbalanced tree', status: 'Failed', passed: false },
-    { name: 'Test Case 4: Empty tree', status: 'Passed', passed: true }
-  ];
+  examTitle: string = '';
+  category: string = '';
+  score: number = 0;
+  timeTaken: string = '';
+  totalLines: number = 0;
+  testCases: any[] = [];
+  violations: number = 0;
 
   constructor(
     private router: Router,
@@ -32,6 +26,25 @@ export class Results implements OnInit {
   ngOnInit(): void {
     window.scrollTo(0, 0);
     this.preventBackButton();
+    this.loadRealResults();
+  }
+
+  loadRealResults() {
+    // قراءة البيانات التي تم حفظها عند ضغط زر Submit في ExamEditor
+    const data = localStorage.getItem('ofoq_last_result');
+    if (data) {
+      const parsed = JSON.parse(data);
+      this.examTitle = parsed.examTitle;
+      this.category = parsed.category;
+      this.score = parsed.score;
+      this.timeTaken = parsed.timeTaken;
+      this.totalLines = parsed.totalLines;
+      this.testCases = parsed.testCases;
+      this.violations = parsed.violations;
+    } else {
+      // إذا حاول الطالب دخول الصفحة يدوياً بدون امتحان
+      this.router.navigate(['/dashboardstudent']);
+    }
   }
 
   preventBackButton() {
@@ -42,14 +55,12 @@ export class Results implements OnInit {
   }
 
   get passedCount(): number {
-    return this.testCases.filter(t => t.passed).length;
+    return this.testCases ? this.testCases.filter(t => t.passed).length : 0;
   }
 
   goHome() {
+    // مسح الداتا المؤقتة عند الخروج للداش بورد
+    localStorage.removeItem('ofoq_last_result');
     this.router.navigate(['/dashboardstudent'], { replaceUrl: true });
-  }
-
-  reviewSolution() {
-    this.router.navigate(['/dashboardstudent']);
   }
 }

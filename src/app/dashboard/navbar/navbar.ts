@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, RouterLink } from "@angular/router";
+import { CommonModule } from '@angular/common'; // مهم جداً لاستخدام *ngIf
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, CommonModule],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css'
 })
@@ -12,7 +13,7 @@ export class Navbar implements OnInit {
   fullName: string = '';
   displayName: string = '';
   initials: string = '';
-  userRole: string = ''; // متغير جديد لتخزين الدور (student أو professor)
+  userRole: string = '';
 
   constructor(private router: Router) {}
 
@@ -20,26 +21,22 @@ export class Navbar implements OnInit {
     this.loadUser();
   }
 
+  // دالة للتحقق من حالة تسجيل الدخول لاستخدامها في الـ HTML
+  isLoggedIn(): boolean {
+    return !!localStorage.getItem('userToken');
+  }
+
   loadUser(): void {
     const userJson = localStorage.getItem('currentUser');
-
     if (userJson) {
       try {
         const user = JSON.parse(userJson);
         this.fullName = user.fullName || 'User';
-        // جلب الدور من الـ localStorage (تأكدي أن الباك إند يرسله باسم userType أو role)
         this.userRole = user.userType || user.role || '';
-
-        // استخراج الحروف الأولى
         this.initials = this.getInitials(this.fullName);
 
-        // تنسيق الاسم وإضافة لقب Dr. إذا كان دكتور
         let formatted = this.formatName(this.fullName);
-        if (this.userRole === 'professor') {
-          this.displayName = `Dr. ${formatted}`;
-        } else {
-          this.displayName = formatted;
-        }
+        this.displayName = this.userRole === 'professor' ? `Dr. ${formatted}` : formatted;
 
       } catch (e) {
         this.displayName = 'User';
@@ -48,37 +45,35 @@ export class Navbar implements OnInit {
     }
   }
 
-  // دالة التوجيه بناءً على نوع المستخدم
   goToProfile(): void {
-    if (this.userRole === 'professor') {
-      this.router.navigate(['/profprofile']); // مسار الدكتور
-    } else {
-      this.router.navigate(['/stdprofile']); // مسار الطالب
-    }
+    const target = this.userRole === 'professor' ? '/profprofile' : '/stdprofile';
+    this.router.navigate([target]);
   }
 
   getInitials(name: string): string {
-    return name
-      .split(' ')
-      .filter(part => part.length > 0)
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+    return name.split(' ').filter(p => p.length > 0).map(p => p[0]).join('').toUpperCase().substring(0, 2);
   }
 
   formatName(name: string): string {
     const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return `${parts[0]} ${parts[1]}`;
-    }
-    return `${parts[0] || 'User'}`;
+    return parts.length >= 2 ? `${parts[0]} ${parts[1]}` : (parts[0] || 'User');
   }
 
+  // دالة الخروج المحدثة
   logout(): void {
+    // 1. مسح كل بيانات الجلسة
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('userToken'); // ضروري جداً لتعطيل الـ AuthGuard
+
+    // 2. تصفير المتغيرات المحلية
     this.displayName = '';
     this.userRole = '';
-    this.router.navigate(['/login']);
+    this.fullName = '';
+    this.initials = '';
+
+    // 3. التوجيه لصفحة الـ Login مع منع الرجوع للخلف
+    this.router.navigate(['/login'], { replaceUrl: true });
+
+    console.log('Logged out and history cleared.');
   }
 }

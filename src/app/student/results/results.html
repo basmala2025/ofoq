@@ -1,19 +1,7 @@
 <div id="results-page" class="results-page-wrapper">
-  <!-- <nav class="navbar">
-    <div class="navbar-content">
-      <div class="navbar-brand">
-        <i class="fas fa-code"></i>
-        <span>CodeExam Platform</span>
-      </div>
-    </div>
-  </nav> -->
-
   <div class="results-container">
     <div class="results-box">
       <div class="results-header">
-        <!-- <div class="results-icon" [class.failed-icon]="score < 50">
-          <i [class]="score >= 50 ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-        </div> -->
         <h1>Exam Completed!</h1>
         <p>{{ examTitle }} - {{ category }}</p>
       </div>
@@ -37,10 +25,10 @@
       <div class="stats-mini-grid">
         <div class="stat-mini">
           <div class="stat-mini-value">{{ timeTaken }}</div>
-          <div class="stat-mini-label">Time Taken</div>
+          <div class="stat-mini-label">Time Remaining</div>
         </div>
         <div class="stat-mini">
-          <div class="stat-mini-value">{{ passedCount }}/{{ testCases.length }}</div>
+          <div class="stat-mini-value">{{ passedCount }}/{{ testCases?.length || 0 }}</div>
           <div class="stat-mini-label">Tests Passed</div>
         </div>
         <div class="stat-mini">
@@ -49,8 +37,11 @@
         </div>
       </div>
 
+      <div class="violations-summary" *ngIf="violations > 0" style="margin-top: 1rem; color: #e74c3c; font-weight: bold;">
+        AI Alert: {{ violations }} Security Violations detected.
+      </div>
+
       <div class="button-group">
-       
         <button class="btn btn-primary" (click)="goHome()">
           <i class="fas fa-home"></i> Back to Dashboard
         </button>
@@ -58,3 +49,4 @@
     </div>
   </div>
 </div>
+ 

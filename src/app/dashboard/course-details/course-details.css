@@ -470,7 +470,53 @@
             background: #5a2b9d;
             transform: translateY(-2px);
         }
+/* تنسيقات الجداول والعناوين الملونة */
+.gradient-header {
+    background: linear-gradient(135deg, #f47545 0%, #5f369e 100%);
+    color: white;
+}
 
+.gradient-header th {
+    padding: 1.25rem;
+    font-weight: 700;
+}
+
+/* تكييف الألوان لحالات النجاح والانتهاكات */
+.badge-high {
+    background: #D1FAE5;
+    color: #065F46;
+    border: 2px solid #10B981;
+}
+
+.badge-low {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 2px solid #EF4444;
+}
+
+.view-summary-btn {
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #f47545 0%, #5f369e 100%);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.view-summary-btn:hover {
+    transform: scale(1.05);
+}
+
+/* ضمان ظهور الجدول بشكل احترافي */
+.table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    overflow: hidden;
+    border: 1px solid #E5E7EB;
+}
         /* Responsive Design */
         @media (max-width: 968px) {
             .profile-container {

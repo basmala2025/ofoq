@@ -22,7 +22,27 @@
             top: 0;
             z-index: 1000;
         }
+ .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #f47545 0%, #5f369e 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
 
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
         .logo {
             font-size: 1.75rem;
             font-weight: 700;

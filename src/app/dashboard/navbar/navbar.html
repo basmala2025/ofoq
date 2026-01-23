@@ -1,10 +1,15 @@
 <nav class="navbar">
     <div class="logo" routerLink="/" style="cursor: pointer;">
         <img src="logo-removebg-preview.png" alt="OFOQ Logo" width="100">
-    </div>
+      </div>
+      <div>
+        <button class="submit-btn" (click)="logout()">
+          <i class="ph ph-sign-out"></i> Logout
+      </button>
+      </div>
 
     <div class="nav-actions">
-        @if (displayName) {
+        @if (isLoggedIn() && displayName) {
             <div class="user-info" (click)="goToProfile()" style="cursor: pointer;">
                 <span class="doctor-name">{{ displayName }}</span>
                 <div class="profile-icon">
@@ -12,9 +17,6 @@
                 </div>
             </div>
 
-            <!-- <button class="logout-link" (click)="logout()">
-                <i class="ph ph-sign-out"></i> Logout
-            </button> -->
         } @else {
             <button class="login-btn" routerLink="/login">Login</button>
         }

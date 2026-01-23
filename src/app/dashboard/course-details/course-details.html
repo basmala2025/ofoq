@@ -1,91 +1,129 @@
 <app-navbar></app-navbar>
-<div class="history-view">
 
-  <br>
-  <button class="back-btn" routerLink="/dashboard">← Back</button>
-<br> <br>
-  <div class="tab-group" style="margin-bottom: 2rem;">
-    <button class="tab-btn" [class.active]="activeTab === 'active'" (click)="activeTab = 'active'">Active Session</button>
-    <button class="tab-btn" [class.active]="activeTab === 'past'" (click)="activeTab = 'past'">Past Sessions</button>
-  </div>
+<div class="history-view main-content">
+    <br>
+    <button class="back-btn" routerLink="/dashboard">← Back to Dashboard</button>
+    <br><br>
 
-  @if (course) {
-      @if (activeTab === 'active') {
-        <div class="tab-content active">
-            <div class="session-card">
-                <h2 class="session-title">Start New Session: {{ course.name }}</h2>
+    <div class="tab-group" style="margin-bottom: 2rem;">
+        <button class="tab-btn" [class.active]="activeTab === 'active'" (click)="activeTab = 'active'">Active Session</button>
+        <button class="tab-btn" [class.active]="activeTab === 'past'" (click)="activeTab = 'past'">Past Sessions</button>
+        <button class="tab-btn" [class.active]="activeTab === 'results'" (click)="activeTab = 'results'">Student Grades</button>
+    </div>
 
-                <div class="form-group">
-                    <label class="form-label">Select Room</label>
-                    <select class="form-select" [(ngModel)]="selectedRoom">
-                        <option value="Room A - Building 1">Room A - Building 1</option>
-                        <option value="Room B - Building 1">Room B - Building 1</option>
-                        <option value="Lab 1 - Building 3">Lab 1 - Building 3</option>
-                    </select>
-                </div>
-
-                <div class="monitor-card">
-                    <div class="monitor-header">
-                        <div class="monitor-title">📹 Camera Monitoring</div>
-                        <span class="status-badge status-active">Active</span>
+    @if (course) {
+        @if (activeTab === 'active') {
+            <div class="tab-content active">
+                <div class="session-card">
+                    <h2 class="session-title">Start New Session: {{ course.name }}</h2>
+                    <div class="form-group">
+                        <label class="form-label">Select Room</label>
+                        <select class="form-select" [(ngModel)]="selectedRoom">
+                            <option value="Room A - Building 1">Room A - Building 1</option>
+                            <option value="Room B - Building 1">Room B - Building 1</option>
+                            <option value="Lab 1 - Building 3">Lab 1 - Building 3</option>
+                        </select>
                     </div>
-                    <div class="monitor-content">
-                        AI-powered focus detection is enabled. The system will monitor student engagement in real-time.
-                    </div>
-                </div>
 
-                <button class="btn-gradient" (click)="onStartSession()">Start Session</button>
+                    <div class="monitor-card">
+                        <div class="monitor-header">
+                            <div class="monitor-title">📹 Camera Monitoring</div>
+                            <span class="status-badge status-active">Active</span>
+                        </div>
+                        <div class="monitor-content">
+                            AI-powered focus detection is enabled. The system will monitor student engagement in real-time.
+                        </div>
+                    </div>
+
+                    <button class="btn-gradient" (click)="onStartSession()">Start Session</button>
+                </div>
             </div>
-        </div>
-    }
-    @if (activeTab === 'past') {
-      <div class="info-card">
-        <h2 style="font-size: 1.75rem; font-weight: 700; color: #1F2937; margin: 0;">Session History</h2>
-        <p style="color: #6B7280; margin-top: 0.5rem;">{{course.name}} ({{course.code}})</p>
-      </div>
+        }
 
-      <div class="table-container">
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr class="gradient-header">
-              <th style="text-align: left;">Date</th>
-              <th>Duration</th>
-              <th>Attendance</th>
-              <th>Avg. Focus</th>
-              <th>Focus Level</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (session of pastSessions; track session.id) {
-              <tr class="history-row">
-                <td style="text-align: left; font-weight: 600;">{{ session.date }}</td>
-                <td>{{ session.duration }}</td>
-                <td>
-                    <div style="font-weight: 700;">{{ session.attendance }}</div>
-                </td>
-                <td>
-                  <div style="font-weight: 700; color: #5f369e; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                    📈 {{ session.focus }}
-                  </div>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="{
-                    'badge-high': session.focusLevel === 'High',
-                    'badge-medium': session.focusLevel === 'Medium',
-                    'badge-low': session.focusLevel === 'Low'
-                  }">
-                    {{ session.focusLevel }}
-                  </span>
-                </td>
-                <td>
-                  <button class="view-summary-btn">View Summary</button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+        @if (activeTab === 'past') {
+            <div class="info-card">
+                <h2 style="font-size: 1.75rem; font-weight: 700; color: #1F2937; margin: 0;">Session History</h2>
+                <p style="color: #6B7280; margin-top: 0.5rem;">{{course.name}} ({{course.code}})</p>
+            </div>
+
+            <div class="table-container">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr class="gradient-header">
+                            <th style="text-align: left;">Date</th>
+                            <th>Duration</th>
+                            <th>Attendance</th>
+                            <th>Avg. Focus</th>
+                            <th>Focus Level</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (session of pastSessions; track session.id) {
+                            <tr class="history-row">
+                                <td style="text-align: left; font-weight: 600;">{{ session.date }}</td>
+                                <td>{{ session.duration }}</td>
+                                <td><div style="font-weight: 700;">{{ session.attendance }}</div></td>
+                                <td><div style="font-weight: 700; color: #5f369e;">📈 {{ session.focus }}</div></td>
+                                <td>
+                                    <span class="badge" [ngClass]="{
+                                        'badge-high': session.focusLevel === 'High',
+                                        'badge-medium': session.focusLevel === 'Medium',
+                                        'badge-low': session.focusLevel === 'Low'
+                                    }">{{ session.focusLevel }}</span>
+                                </td>
+                                <td><button class="view-summary-btn">View Summary</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (activeTab === 'results') {
+            <div class="info-card">
+                <h2 style="font-size: 1.75rem; font-weight: 700; color: #1F2937; margin: 0;">Exam Grades</h2>
+                <p style="color: #6B7280; margin-top: 0.5rem;">Student performance and AI-detected proctoring violations.</p>
+            </div>
+
+            <div class="table-container">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr class="gradient-header">
+                            <th style="text-align: left;">Student Name</th>
+                            <th>Date</th>
+                            <th>Violations</th>
+                            <th>Score</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (res of studentsResults; track res.id) {
+                            <tr class="history-row">
+                                <td style="text-align: left; font-weight: 600;">{{ res.studentName }}</td>
+                                <td>{{ res.date }}</td>
+                                <td>
+                                    <div style="font-weight: 700; color: #f47545;">🚨 {{ res.violations }}</div>
+                                </td>
+                                <td><div style="font-weight: 700;">{{ res.score }}%</div></td>
+                                <td>
+                                    <span class="badge" [ngClass]="res.status === 'Passed' ? 'badge-high' : 'badge-low'">
+                                        {{ res.status }}
+                                    </span>
+                                </td>
+                                <td><button class="view-summary-btn">View Code</button></td>
+                            </tr>
+                        } @empty {
+                            <tr>
+                                <td colspan="6" style="padding: 3rem; text-align: center; color: #718096;">
+                                    No student results available for this course yet.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
-  }
 </div>

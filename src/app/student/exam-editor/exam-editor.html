@@ -60,4 +60,15 @@
       </div>
     </div>
   </div>
+  <div *ngIf="isOffline" class="offline-warning">
+  <mat-icon>cloud_off</mat-icon>
+  <span>Internet Connection Lost! Your progress is being saved locally.</span>
+</div>
+
+<button mat-raised-button
+        color="accent"
+        (click)="submitSolution()"
+        [disabled]="isOffline">
+  Submit Exam
+</button>
 </div>

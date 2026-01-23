@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Navbar } from "../../navbar/navbar";
@@ -15,12 +14,10 @@ import { Navbar } from "../../navbar/navbar";
 })
 export class Signup implements OnInit {
   signupForm!: FormGroup;
-  private apiUrl = 'http://notrealstate.runasp.net/api/Account/Register';
-  isLoading :boolean=false
+  isLoading: boolean = false;
 
   constructor(
     private fb: FormBuilder,
-    private http: HttpClient,
     private router: Router
   ) {}
 
@@ -33,31 +30,38 @@ export class Signup implements OnInit {
     });
   }
 
- onSubmit(): void {
-  if (this.signupForm.invalid) {
-    this.signupForm.markAllAsTouched();
-    return;
+  onSubmit(): void {
+    if (this.signupForm.invalid) {
+      this.signupForm.markAllAsTouched();
+      return;
+    }
+
+    this.isLoading = true;
+
+    // محاكاة تأخير الشبكة (Network Delay)
+    setTimeout(() => {
+      const { fullName, email, userType } = this.signupForm.value;
+
+      // 1. تجهيز بيانات المستخدم الوهمية
+      const mockUser = {
+        id: 'mock-id-' + Math.random().toString(36).substr(2, 9),
+        fullName: fullName,
+        email: email,
+        userType: userType // 'professor' أو 'student'
+      };
+
+      // 2. تخزين البيانات في LocalStorage (كأننا عملنا Login)
+      localStorage.setItem('userToken', 'mock-jwt-token-12345');
+      localStorage.setItem('currentUser', JSON.stringify(mockUser));
+
+      // 3. التوجيه للداش بورد الصحيحة بناءً على النوع
+      // استخدمنا replaceUrl: true لمنع الرجوع لصفحة الـ Signup بـ Back
+      const target = userType === 'professor' ? '/dashboard' : '/dashboardstudent';
+
+      this.router.navigate([target], { replaceUrl: true });
+
+      this.isLoading = false;
+      console.log('Mock Signup & Login Successful:', mockUser);
+    }, 1500);
   }
-
-  this.isLoading = true;
-
-  setTimeout(() => {
-    const user = {
-      fullName: this.signupForm.value.fullName,
-      email: this.signupForm.value.email,
-      role: this.signupForm.value.userType === 'professor' ? 'professor' : 'student'
-    };
-
-    localStorage.setItem('currentUser', JSON.stringify(user));
-
-    if (user.role === 'professor') {
-      this.router.navigate(['/dashboard']);
-    }
-    if (user.role === 'student') {
-      this.router.navigate(['/courses']);
-    }
-
-    this.isLoading = false;
-  }, 1000);
-}
 }

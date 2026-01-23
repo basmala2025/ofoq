@@ -7,12 +7,12 @@ import { Observable, of } from 'rxjs';
 })
 export class Data {
   private mockCourses: Course[] = [
-    { id: 1, name: 'Data Structures', code: 'CS201', icon: 'DS' },
-    { id: 2, name: 'Algorithms', code: 'CS301', icon: 'AL' },
-    { id: 3, name: 'Database Systems', code: 'CS305', icon: 'DB' },
-    { id: 4, name: 'Software Engineering', code: 'CS401', icon: 'SE' },
-    { id: 5, name: 'Machine Learning', code: 'CS501', icon: 'ML' },
-    { id: 6, name: 'Computer Networks', code: 'CS302', icon: 'CN' }
+    { id: 1, name: 'Data Structures', code: 'CS201', icon: 'DS',professor: 'Dr. Ahmad' },
+    { id: 2, name: 'Algorithms', code: 'CS301', icon: 'AL' ,professor: 'Dr. Ragab'},
+    { id: 3, name: 'Database Systems', code: 'CS305', icon: 'DB' ,professor: 'Dr. Essam'},
+    { id: 4, name: 'Software Engineering', code: 'CS401', icon: 'SE' ,professor: 'Dr. Ebrahim'},
+    { id: 5, name: 'Machine Learning', code: 'CS501', icon: 'ML' ,professor: 'Dr. Mohamed'},
+    { id: 6, name: 'Computer Networks', code: 'CS302', icon: 'CN' ,professor: 'Dr. Ahmad'}
   ];
 
   // بيانات الجلسات المحدثة (أضفت focusLevel لكل جلسة)

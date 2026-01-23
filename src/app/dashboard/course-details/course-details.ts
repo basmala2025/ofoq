@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
-import { FormsModule } from '@angular/forms'; // ضروري لعمل ngModel
-import { Data } from '../../services/data'; // تأكد من صحة المسار للسيرفس
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { Data } from '../../services/data';
 import { Course, Session } from '../../models/data.model';
 import { Navbar } from "../navbar/navbar";
-import {  Router } from '@angular/router';
+
 @Component({
   selector: 'app-course-details',
   standalone: true,
@@ -14,11 +14,12 @@ import {  Router } from '@angular/router';
   styleUrls: ['./course-details.css']
 })
 export class CourseDetails implements OnInit {
-  activeTab: 'active' | 'past' = 'active';
+  // تحديث الخيارات لتشمل التاب الجديد 'results'
+  activeTab: 'active' | 'past' | 'results' = 'active';
   course?: Course;
   pastSessions: Session[] = [];
+  studentsResults: any[] = [];
 
-  // يجب تعريف هذا المتغير ليستخدمه ngModel في الـ HTML
   selectedRoom: string = 'Room A - Building 1';
 
   constructor(
@@ -31,12 +32,21 @@ export class CourseDetails implements OnInit {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.course = this.dataService.getCourseById(id);
     this.pastSessions = this.dataService.getSessionsByCourse(id);
+
+    // تحميل نتائج الطلاب المسجلين عند بدء تشغيل الصفحة
+    this.loadExamResults(id);
   }
 
- onStartSession() {
-  if (this.course) {
-    console.log('Navigating to Live Dashboard for Course ID:', this.course.id);
-
-    this.router.navigate(['/livedashboard', this.course.id]);
+  loadExamResults(courseId: number) {
+    // جلب البيانات من سجل النتائج العام المخزن محلياً
+    const allData = JSON.parse(localStorage.getItem('all_students_results') || '[]');
+    // تصفية البيانات لعرض طلاب هذا الكورس فقط
+    this.studentsResults = allData.filter((res: any) => res.courseId === courseId);
   }
-}}
+
+  onStartSession() {
+    if (this.course) {
+      this.router.navigate(['/livedashboard', this.course.id]);
+    }
+  }
+}
