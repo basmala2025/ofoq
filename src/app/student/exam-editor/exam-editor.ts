@@ -1,18 +1,17 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener } from '@angular/core';
+import { Component, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
+import { SocketService } from '../../services/socket';
+import { ExamService } from '../../services/exam';
 import loader from '@monaco-editor/loader';
-
-type Monaco = typeof import('monaco-editor');
 
 @Component({
   selector: 'app-exam-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule, MatSelectModule, MatIconModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule],
   templateUrl: './exam-editor.html',
   styleUrls: ['./exam-editor.css']
 })
@@ -21,175 +20,217 @@ export class ExamEditorComponent implements AfterViewInit, OnDestroy {
   @ViewChild('videoElement') videoElement!: ElementRef;
 
   editor: any;
-  private monacoNamespace: Monaco | null = null;
   private mediaStream: MediaStream | null = null;
+  private streamInterval: any;
 
-  // --- حالة الامتحان ---
+  // إحصائيات الأمان
   violationCount = 0;
+  isExamFinished = false; // متغير حرج لمنع التكرار
   isPanicMode = false;
-  isOffline = false;
-  savedCodeKey = 'ofoq_exam_backup';
-  isExamFinished = false;
-  cvActive = true;
-  securityMessage = '';
   showSecurityToast = false;
+  isRedAlarm = false;
+  securityMessage = '';
+  cvActive = false;
+  savedCodeKey = 'ofoq_exam_backup';
 
-  language = 'python';
-  timeRemaining = 42 * 60 + 35;
-  timerDisplay = '42:35';
+  // تتبع حركة الرأس
+  private activeDirection = 'forward';
+  private directionStartTime = 0;
+  private alarmTriggeredForCurrent = false;
+
+  timeRemaining = 45 * 60;
+  timerDisplay = '45:00';
   private timerInterval: any;
+  output = `System Initialized. Status: Secure.`;
 
-  languages = [
-    { value: 'python', label: 'Python' },
-    { value: 'cpp', label: 'C++' },
-    { value: 'java', label: 'Java' }
-  ];
+  constructor(private router: Router, private socketService: SocketService, private examService: ExamService) {}
 
-  output = `System Initialized. All security protocols are active.`;
-
-  constructor(private router: Router) {}
-
-  // --- بروتوكولات الأمان ---
+  // --- حماية النظام (Warnings) ---
   @HostListener('document:contextmenu', ['$event'])
-  preventRightClick(e: MouseEvent) { e.preventDefault(); }
+  preventRightClick(e: MouseEvent) {
+    e.preventDefault();
+    this.showWarning('Right-Click Blocked! (Warning)');
+  }
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboard(e: KeyboardEvent) {
     const key = e.key.toLowerCase();
-    const forbiddenKeys = ['c', 'v', 'a', 'x', 's'];
-    if ((e.ctrlKey && forbiddenKeys.includes(key)) || e.key === 'F12') {
+    const ctrl = e.ctrlKey || e.metaKey;
+    if ((ctrl && ['c', 'v', 'a', 'x', 's'].includes(key)) || e.key === 'F12') {
       e.preventDefault();
-      this.recordViolation('Shortcut Blocked: Action not allowed.');
+      this.showWarning(`Shortcut Ctrl+${key.toUpperCase()} Blocked! (Warning)`);
     }
   }
 
+  // --- حماية الـ Tabs (Alarm فوري) ---
   @HostListener('document:visibilitychange')
   onVisibilityChange() {
-    if (document.hidden) {
+    if (document.hidden && !this.isExamFinished) {
       this.isPanicMode = true;
-      this.recordViolation('Tab Switch Detected!');
+      this.triggerViolentAlarm('ALARM: Tab Switch Detected!');
     } else {
-      setTimeout(() => this.isPanicMode = false, 2000);
+      setTimeout(() => this.isPanicMode = false, 1500);
     }
   }
 
-  @HostListener('window:offline')
-  onOffline() {
-    this.isOffline = true;
-    this.output += `\n[NETWORK]: Connection lost! Switched to Local Save.`;
+  // --- منطق الـ AI والـ 5 ثوانٍ ---
+  listenToAI() {
+    this.socketService.aiReport$.subscribe((res: any) => {
+      if (this.isExamFinished) return; // توقف عن الاستماع إذا انتهى الامتحان
+
+      if (res.type === 'result' && res.data) {
+        const dir = res.data.direction.toLowerCase();
+        if (dir === 'forward' || dir === 'center') {
+          this.resetHeadState();
+        } else {
+          this.processHeadMovement(dir);
+        }
+      }
+    });
   }
 
-  @HostListener('window:online')
-  onOnline() {
-    this.isOffline = false;
-    this.output += `\n[NETWORK]: Connection restored.`;
+  processHeadMovement(dir: string) {
+    const now = Date.now();
+    if (this.activeDirection !== dir) {
+      this.activeDirection = dir;
+      this.directionStartTime = now;
+      this.alarmTriggeredForCurrent = false;
+      this.showWarning(`Warning: Please look at the screen! (${dir})`);
+    } else if (!this.alarmTriggeredForCurrent) {
+      const elapsed = (now - this.directionStartTime) / 1000;
+      if (elapsed >= 5) {
+        this.alarmTriggeredForCurrent = true;
+        this.triggerViolentAlarm(`ALARM: Excessive Head Movement (${dir})!`);
+      }
+    }
   }
 
-  recordViolation(msg: string) {
+  resetHeadState() {
+    this.activeDirection = 'forward';
+    this.directionStartTime = 0;
+    this.alarmTriggeredForCurrent = false;
+  }
+
+  // --- إدارة التنبيهات وقفل الامتحان ---
+  showWarning(msg: string) {
+    if (this.isRedAlarm || this.isExamFinished) return;
+    this.securityMessage = msg;
+    this.isRedAlarm = false;
+    this.showSecurityToast = true;
+    this.output += `\n[Warning]: ${msg}`;
+    setTimeout(() => { if(!this.isRedAlarm) this.showSecurityToast = false; }, 3000);
+  }
+
+  triggerViolentAlarm(msg: string) {
+    if (this.isExamFinished) return;
+
     this.violationCount++;
     this.securityMessage = msg;
+    this.isRedAlarm = true;
     this.showSecurityToast = true;
-    this.output += `\n[ALERT]: ${msg}`;
+    this.output += `\n[ALARM ${this.violationCount}/3]: ${msg}`;
 
-    setTimeout(() => { this.showSecurityToast = false; }, 4000);
+    this.playAlarmSound();
 
+    // القفل الفوري عند الوصول لـ 3 إنذارات
     if (this.violationCount >= 3) {
-      this.submitSolution();
+      this.output += `\n[CRITICAL]: 3 Alarms reached. Terminating session NOW.`;
+      // لا ننتظر طويلاً، نغلق الامتحان فوراً لضمان عدم استكمال الغش
+      setTimeout(() => this.submitSolution(), 1000);
+    } else {
+      setTimeout(() => { this.showSecurityToast = false; this.isRedAlarm = false; }, 5000);
     }
   }
 
-  // --- الكاميرا والمحرر ---
-  async initCamera() {
-    try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (this.videoElement && this.videoElement.nativeElement) {
-        this.videoElement.nativeElement.srcObject = this.mediaStream;
-      }
-    } catch (err) {
-      this.recordViolation('Camera Error: Access mandatory.');
-    }
+  private playAlarmSound() {
+    const audio = new Audio('assets/sounds/alert.mp3');
+    audio.play().catch(() => {});
   }
 
-  private stopCamera() {
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop());
-      this.mediaStream = null;
-    }
-  }
-
+  // --- الـ Editor والـ Local Storage ---
   ngAfterViewInit() {
     this.initCamera();
     this.enterFullScreen();
 
-    loader.init().then((monaco: Monaco) => {
-      this.monacoNamespace = monaco;
-      const recoveredCode = localStorage.getItem(this.savedCodeKey);
-
+    loader.init().then((monaco: any) => {
+      const recovered = localStorage.getItem(this.savedCodeKey);
       this.editor = monaco.editor.create(this.editorContainer.nativeElement, {
-        value: recoveredCode || this.getTemplateCode('python'),
-        language: this.language,
+        value: recovered || `# Solve the problem here\ndef solve():\n    pass`,
+        language: 'python',
         theme: 'vs-dark',
         automaticLayout: true,
-        contextmenu: false,
-        fontSize: 15,
-        minimap: { enabled: false }
+        contextmenu: false
       });
 
       this.editor.onDidChangeModelContent(() => {
-        localStorage.setItem(this.savedCodeKey, this.editor.getValue());
+        if (!this.isExamFinished) {
+          localStorage.setItem(this.savedCodeKey, this.editor.getValue());
+        }
       });
     });
-
     this.startTimer();
   }
 
-  enterFullScreen() {
-    const el = document.documentElement as any;
-    if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  // --- التحكم في الامتحان والإنهاء ---
+  submitSolution() {
+    if (this.isExamFinished) return;
+    this.isExamFinished = true; // نمنع أي محاولات تقديم أخرى
+
+    this.output += `\nSystem: Finalizing submission...`;
+
+    // 1. إيقاف كل شيء فوراً
+    this.stopEverything();
+
+    // 2. إرسال البيانات للسيرفر
+    const studentCode = this.editor ? this.editor.getValue() : localStorage.getItem(this.savedCodeKey);
+
+    this.examService.submitExam({
+      code: studentCode,
+      violations: this.violationCount,
+      terminated: this.violationCount >= 3
+    }).subscribe({
+      next: () => this.goToResults(),
+      error: () => this.goToResults() // ننتقل للنتائج حتى لو فشل السيرفر
+    });
   }
 
-  // --- تسليم الامتحان وربط البيانات ---
-  submitSolution() {
-    this.isExamFinished = true;
-    this.stopCamera();
+  private goToResults() {
+    localStorage.removeItem(this.savedCodeKey); // مسح النسخة الاحتياطية
+    this.router.navigate(['/results'], { replaceUrl: true }); // الانتقال الفوري لصفحة النتائج
+  }
 
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    const currentCourseId = 1;
-
-    // إعداد الكائن ليتوافق مع ما تتوقعه صفحة النتائج
-    const resultRecord = {
-      id: Date.now(),
-      studentName: currentUser.fullName || 'Unknown Student',
-      courseId: currentCourseId,
-      examTitle: 'Binary Trees Quiz',
-      category: 'Data Structures', // مطلوب في صفحة النتائج
-      score: this.violationCount >= 3 ? 0 : 85,
-      violations: this.violationCount,
-      date: new Date().toLocaleString(),
-      status: this.violationCount >= 3 ? 'Terminated' : 'Passed',
-      timeTaken: this.timerDisplay,
-      totalLines: this.editor ? this.editor.getModel().getLineCount() : 0, // مطلوب في صفحة النتائج
-      testCases: [ // محاكاة حالات الاختبار المطلوبة في صفحة النتائج
-        { name: 'Basic tree', status: 'Passed', passed: true },
-        { name: 'Single node', status: 'Passed', passed: true },
-        { name: 'Unbalanced tree', status: this.violationCount > 0 ? 'Failed' : 'Passed', passed: this.violationCount === 0 },
-        { name: 'Security Check', status: this.violationCount < 3 ? 'Passed' : 'Failed', passed: this.violationCount < 3 }
-      ]
-    };
-
-    // حفظ النتائج للدكتور
-    const allResults = JSON.parse(localStorage.getItem('all_students_results') || '[]');
-    allResults.push(resultRecord);
-    localStorage.setItem('all_students_results', JSON.stringify(allResults));
-
-    // حفظ النتيجة الحالية للطالب (ليقرأها مكون Results)
-    localStorage.setItem('ofoq_last_result', JSON.stringify(resultRecord));
-
-    // تنظيف النسخة الاحتياطية
-    localStorage.removeItem(this.savedCodeKey);
-
+  private stopEverything() {
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(t => t.stop());
+    }
+    this.socketService.disconnect();
+    if (this.streamInterval) clearInterval(this.streamInterval);
+    if (this.timerInterval) clearInterval(this.timerInterval);
     if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-    this.router.navigate(['/results'], { replaceUrl: true });
+  }
+
+  // --- الكاميرا والـ Streaming ---
+  async initCamera() {
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640 } });
+      if (this.videoElement?.nativeElement) this.videoElement.nativeElement.srcObject = this.mediaStream;
+      this.socketService.connectToAI();
+      this.listenToAI();
+      this.startStreaming();
+    } catch { this.output += '\nError: Camera access required.'; }
+  }
+
+  startStreaming() {
+    this.streamInterval = setInterval(() => {
+      if (this.isExamFinished) return;
+      const video = this.videoElement?.nativeElement;
+      if (video && video.readyState === 4) {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext('2d')?.drawImage(video, 0, 0);
+        this.socketService.sendFrame(canvas.toDataURL('image/jpeg', 0.4));
+      }
+    }, 250);
   }
 
   startTimer() {
@@ -199,36 +240,14 @@ export class ExamEditorComponent implements AfterViewInit, OnDestroy {
         const m = Math.floor(this.timeRemaining / 60);
         const s = this.timeRemaining % 60;
         this.timerDisplay = `${m}:${s.toString().padStart(2, '0')}`;
-      } else {
-        this.submitSolution();
-      }
+      } else { this.submitSolution(); }
     }, 1000);
   }
 
-  runCode() {
-    this.output += `\nRunning tests...\nAll test cases passed ✓`;
+  enterFullScreen() {
+    const el = document.documentElement as any;
+    if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
   }
 
-  onLanguageChange() {
-    if (this.editor && this.monacoNamespace) {
-      const model = this.editor.getModel();
-      this.monacoNamespace.editor.setModelLanguage(model, this.language);
-      this.editor.setValue(this.getTemplateCode(this.language));
-    }
-  }
-
-  getTemplateCode(lang: string): string {
-    const templates: any = {
-      python: `class Solution:\n    def maxDepth(self, root):\n        # Your code here`,
-      cpp: `class Solution {\npublic:\n    int maxDepth(TreeNode* root) {\n        // Your code here\n    }\n};`,
-      java: `class Solution {\n    public int maxDepth(TreeNode root) {\n        // Your code here\n    }\n}`
-    };
-    return templates[lang] || '';
-  }
-
-  ngOnDestroy() {
-    this.stopCamera();
-    if (this.timerInterval) clearInterval(this.timerInterval);
-    if (this.editor) this.editor.dispose();
-  }
+  ngOnDestroy() { this.stopEverything(); }
 }

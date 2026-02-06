@@ -1,74 +1,88 @@
-<div class="editor-page" [class.panic-blur]="isPanicMode" (click)="enterFullScreen()">
+<div class="exam-wrapper" [class.panic-blur]="isPanicMode" (click)="enterFullScreen()">
 
-  <div class="security-toast" *ngIf="showSecurityToast">
-    <mat-icon>security</mat-icon>
+  <div class="security-toast" *ngIf="showSecurityToast"
+       [class.alarm-red]="isRedAlarm" [class.warning-yellow]="!isRedAlarm">
+    <div class="toast-icon">
+      <mat-icon>{{ isRedAlarm ? 'gavel' : 'report_problem' }}</mat-icon>
+    </div>
     <div class="toast-content">
-      <strong>Security Alert</strong>
-      <span>{{ securityMessage }}</span>
+      <div class="toast-title">{{ isRedAlarm ? 'CRITICAL ALARM' : 'SECURITY WARNING' }}</div>
+      <div class="toast-msg">{{ securityMessage }}</div>
+    </div>
+    <div class="violation-count" *ngIf="isRedAlarm">{{ violationCount }}/3</div>
+  </div>
+
+  <header class="exam-header">
+    <div class="brand">
+      <!-- <div class="logo-icon"><mat-icon>code</mat-icon></div> -->
+      <div class="title-group">
+        <h1>Technical Assessment</h1>
+        <span class="status-tag"><mat-icon>security</mat-icon> Secure Environment</span>
+      </div>
+    </div>
+
+    <div class="header-tools">
+      <div class="timer-box" [class.urgent]="timeRemaining < 300">
+        <mat-icon>schedule</mat-icon>
+        <span class="timer-val">{{ timerDisplay }}</span>
+      </div>
+      <button class="finish-btn" (click)="submitSolution()">
+        Submit Exam
+      </button>
+    </div>
+  </header>
+
+  <main class="dashboard-body">
+    <aside class="side-panel">
+      <section class="panel-section">
+        <h3><mat-icon>description</mat-icon> Problem Description</h3>
+        <div class="problem-text">
+          <p>Find the maximum depth of a binary tree. The maximum depth is the number of nodes along the longest path from the root node down to the farthest leaf node.</p>
+        </div>
+      </section>
+
+      <section class="panel-section rules-section">
+        <h3><mat-icon>gavel</mat-icon> Security Rules</h3>
+        <ul class="rules-list">
+          <li><mat-icon>center_focus_strong</mat-icon> Keep eyes on screen <span>(5s max)</span></li>
+          <li><mat-icon>tab</mat-icon> No tab switching <span>(Immediate Alarm)</span></li>
+          <li><mat-icon>content_copy</mat-icon> Copy/Paste disabled <span>(Warning)</span></li>
+        </ul>
+        <div class="alarm-tracker">
+          <label>Critical Alarms</label>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="(violationCount/3)*100" [class.danger]="violationCount >= 2"></div>
+          </div>
+          <span class="count-text">{{ violationCount }} / 3</span>
+        </div>
+      </section>
+    </aside>
+
+    <section class="editor-panel">
+      <div class="editor-container-wrapper">
+        <div #editorContainer class="monaco-instance"></div>
+      </div>
+
+      <div class="console-wrapper">
+        <div class="console-header">
+          <span><mat-icon>terminal</mat-icon> System Output</span>
+        </div>
+        <div class="console-body">
+          <pre>{{ output }}</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="camera-widget" [class.alarm-glow]="isRedAlarm">
+    <div class="video-container">
+      <video #videoElement autoplay muted playsinline></video>
+      <div class="ai-overlay">
+        <div class="ai-badge" [class.active]="cvActive">
+          <span class="dot"></span> AI LIVE
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="camera-overlay">
-    <div class="camera-wrapper">
-      <video #videoElement autoplay muted class="video-feed"></video>
-      <div class="ai-status">
-        <span class="status-dot" [class.active]="cvActive"></span>
-        AI Proctoring Active
-      </div>
-    </div>
-  </div>
-
-  <div class="editor-header">
-    <div class="editor-title">
-      <h2>Binary Trees Quiz</h2>
-      <p>Solve the problem within the time limit</p>
-    </div>
-    <div class="editor-controls">
-      <div class="timer" [class.warning]="timeRemaining < 300">
-        <mat-icon>access_time</mat-icon>
-        <span>{{ timerDisplay }}</span>
-      </div>
-      <mat-form-field appearance="fill">
-        <mat-label>Language</mat-label>
-        <mat-select [(value)]="language" (valueChange)="onLanguageChange()">
-          <mat-option *ngFor="let lang of languages" [value]="lang.value">
-            {{ lang.label }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-  </div>
-
-  <div class="editor-content">
-    <div class="problem-panel">
-      <h3>Description</h3>
-      <p>Find the maximum depth of a binary tree.</p>
-      <div class="violations-badge" *ngIf="violationCount > 0">
-        Violations: {{ violationCount }} / 3
-      </div>
-    </div>
-
-    <div class="code-panel">
-      <div #editorContainer class="monaco-editor-container"></div>
-      <div class="editor-actions">
-        <button mat-raised-button color="primary" (click)="runCode()">Run Code</button>
-        <button mat-raised-button color="accent" (click)="submitSolution()">Submit</button>
-        <!-- <button mat-stroked-button (click)="exitExam()" class="exit-btn">Exit</button> -->
-      </div>
-      <div class="output-console">
-        <pre>{{ output }}</pre>
-      </div>
-    </div>
-  </div>
-  <div *ngIf="isOffline" class="offline-warning">
-  <mat-icon>cloud_off</mat-icon>
-  <span>Internet Connection Lost! Your progress is being saved locally.</span>
-</div>
-
-<button mat-raised-button
-        color="accent"
-        (click)="submitSolution()"
-        [disabled]="isOffline">
-  Submit Exam
-</button>
 </div>
