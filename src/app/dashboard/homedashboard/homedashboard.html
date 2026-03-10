@@ -7,7 +7,7 @@
  <div class="course-grid">
     @for (course of courses; track course.id) {
         <div class="course-card" [routerLink]="['/course', course.id]">
-            <div class="course-icon">{{ course.icon }}</div>
+            <!-- <div class="course-icon">{{ course.icon }}</div> -->
             <h3 class="course-name">{{ course.name }}</h3>
             <p class="course-code">{{ course.code }}</p>
         </div>

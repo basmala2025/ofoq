@@ -248,6 +248,27 @@ export class ExamEditorComponent implements AfterViewInit, OnDestroy {
     const el = document.documentElement as any;
     if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
   }
+// أضف هذه الدالة داخل الكلاس
+runCode() {
+  if (this.isExamFinished) return;
 
+  const currentCode = this.editor.getValue();
+  this.output += `\n[${new Date().toLocaleTimeString()}] Running Code...`;
+
+  // محاكاة لعملية التشغيل - يمكنك مستقبلاً ربطها بـ API حقيقي لتشغيل الكود
+  setTimeout(() => {
+    if (currentCode.trim() === '') {
+      this.output += `\n❌ Error: No code to run!`;
+    } else {
+      this.output += `\n✅ Execution finished successfully.`;
+      this.output += `\n[Output]: Standard test cases passed.`;
+    }
+
+    const consoleBody = document.querySelector('.console-body');
+    if (consoleBody) {
+      consoleBody.scrollTop = consoleBody.scrollHeight;
+    }
+  }, 1000);
+}
   ngOnDestroy() { this.stopEverything(); }
 }

@@ -1,0 +1,303 @@
+    <div class="dashboard-wrapper">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <!-- <div class="logo-box logo-gradient">O</div> -->
+          <span class="logo-text gradient-text">
+              <img src="logo-removebg-preview.png" alt="OFOQ" width="100px" style="margin-left: 50%;">
+</span>
+        </div>
+
+        <nav class="sidebar-nav">
+          <button (click)="activeTab.set('users')"
+            [class]="activeTab() === 'users' ? 'sidebar-btn active' : 'sidebar-btn inactive'">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <span class="btn-label">Users Management</span>
+          </button>
+
+          <button (click)="activeTab.set('courses')"
+            [class]="activeTab() === 'courses' ? 'sidebar-btn active' : 'sidebar-btn inactive'">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            <span class="btn-label">Course Setup</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="admin-profile-box">
+            <div class="avatar profile-gradient">AD</div>
+            <div class="profile-info">
+              <p class="profile-name">Admin Panel</p>
+              <p class="version-tag">v3.0 Production</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-viewport">
+        <header class="page-header">
+          <!-- <div class="header-titles">
+            <h1 class="main-title gradient-text">
+              {{ activeTab() === 'users' ? 'User Administration' : 'Curriculum Builder' }}
+            </h1>
+            <p class="subtitle">Manage academic assets and roles efficiently.</p>
+          </div> -->
+          <button (click)="openCreateModal()" class="action-btn btn-gradient">
+            <span class="plus-icon">+</span>
+            <span>{{ activeTab() === 'users' ? 'Invite New User' : 'Create Course' }}</span>
+          </button>
+        </header>
+
+        <!-- User Table View -->
+        @if (activeTab() === 'users') {
+          <div class="content-card shadow-large">
+            <div class="filter-bar">
+              <div class="filter-group">
+                @for (role of roles; track role.id) {
+                  <button (click)="selectedRoleFilter.set(role.id)"
+                    [class.filter-active]="selectedRoleFilter() === role.id"
+                    class="filter-btn">
+                    {{ role.label }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="table-scroller">
+              <table class="data-table">
+                <thead class="gradient-header">
+                  <tr>
+                    <th class="cell-l">Name & Email</th>
+                    <th class="cell-c">Role</th>
+                    <th class="cell-c">Status</th>
+                    <th class="cell-r">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="table-body">
+                  @for (user of filteredUsers(); track user.id) {
+                    <tr class="data-row group">
+                      <td class="cell-l">
+                        <div class="user-cell">
+                          <div class="user-avatar profile-gradient">{{ user.name.charAt(0) }}</div>
+                          <div class="user-meta">
+                            <p class="user-name">{{ user.name }}</p>
+                            <p class="user-email">{{ user.email }}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="cell-c">
+                        <span class="role-badge" [ngClass]="getRoleClass(user.role)">
+                          {{ user.role }}
+                        </span>
+                      </td>
+                      <td class="cell-c">
+                        <span class="status-badge" [ngClass]="user.status === 'active' ? 'status-pass' : 'status-fail'">
+                          {{ user.status }}
+                        </span>
+                      </td>
+                      <td class="cell-r">
+                        <div class="action-group">
+                          <button (click)="viewUserDetails(user)" class="icon-btn btn-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
+                          <button (click)="openEditUser(user)" class="icon-btn btn-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                          <button (click)="deleteUser(user.id)" class="icon-btn btn-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                        </div>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="4" class="empty-cell">No users available in this category.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- Course Cards View -->
+        @if (activeTab() === 'courses') {
+          <div class="course-grid">
+            @for (course of dataService.courses(); track course.id) {
+              <div class="course-card-unit">
+                <div class="card-header">
+                  <!-- <div class="course-initial logo-gradient">{{ course.code.charAt(0) }}</div> -->
+                  <div class="card-actions">
+                    <button (click)="openEditCourse(course)" class="small-icon-btn btn-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                    <button (click)="dataService.deleteCourse(course.id)" class="small-icon-btn btn-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <span class="course-code-tag">{{ course.code }}</span>
+                  <h3 class="course-title-text">{{ course.name }}</h3>
+                  <p class="course-desc">{{ course.description || 'No specialized description provided for this academic track.' }}</p>
+                </div>
+                <div class="card-footer">
+                  <div class="staff-indicator">
+                    <div class="bullet"></div>
+                    <span class="staff-label">Faculty Lead</span>
+                  </div>
+                  <p class="staff-names">{{ getStaffNames(course.professorIds) }}</p>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-message">No active courses in the curriculum.</div>
+            }
+          </div>
+        }
+      </main>
+
+      <!-- MODALS -->
+      @if (showUserModal()) {
+        <div class="modal-overlay">
+          <div class="modal-card small-modal animate-zoom">
+            <!-- <h2 class="modal-title gradient-text">{{ editingUser() ? 'Update Profile' : 'Invite to OFOQ' }}</h2>
+            <p class="modal-subtitle">System-wide credential management for academic members.</p> -->
+            <form [formGroup]="userForm" (ngSubmit)="submitUser()" class="modal-form">
+              @if (editingUser()) {
+                <div class="form-item">
+                  <label class="item-label">Member Full Name</label>
+                  <input type="text" formControlName="name" class="item-input">
+                </div>
+              }
+              <div class="form-item">
+                <label class="item-label">Institutional Email</label>
+                <input type="email" formControlName="email" class="item-input" placeholder="e.g. name@ofoq.edu">
+              </div>
+              <div class="form-item">
+                <label class="item-label">Assigned Role</label>
+                <select formControlName="role" class="item-select">
+                  <option value="std">Student Member</option>
+                  <option value="prof">Lead Professor</option>
+                  <option value="ta">Teaching Assistant</option>
+                  <option value="admin">System Administrator</option>
+                </select>
+              </div>
+              <div class="modal-footer-btns">
+                <button type="button" (click)="showUserModal.set(false)" class="cancel-btn">Cancel</button>
+                <button type="submit" [disabled]="userForm.invalid" class="submit-btn btn-gradient">
+                  {{ editingUser() ? 'Update' : 'Send Invite' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
+      @if (showCourseModal()) {
+        <div class="modal-overlay">
+          <div class="modal-card wide-modal animate-zoom scroll-auto">
+            <h2 class="modal-title gradient-text">{{ editingCourse() ? 'Edit Course Structure' : 'Establish New Course' }}</h2>
+            <form [formGroup]="courseForm" (ngSubmit)="submitCourse()" class="modal-form">
+              <div class="grid-2">
+                <div class="form-item">
+                  <label class="item-label">Academic Track Name</label>
+                  <input type="text" formControlName="name" class="item-input" placeholder="e.g. Artificial Intelligence">
+                </div>
+                <div class="form-item">
+                  <label class="item-label">Internal Code</label>
+                  <input type="text" formControlName="code" class="item-input" placeholder="e.g. CS404">
+                </div>
+              </div>
+              <div class="form-item">
+                <label class="item-label">Specialization Summary</label>
+                <textarea formControlName="description" rows="3" class="item-textarea" placeholder="Brief objectives..."></textarea>
+              </div>
+
+              <div class="grid-2">
+                <div>
+                  <label class="item-label col-p">Lead Professor(s)</label>
+                  <div class="staff-picker">
+                    @for (p of professors(); track p.id) {
+                      <button type="button" (click)="toggleSelection(p.id, 'professorIds')"
+                        [class.selected-staff]="isStaffSelected(p.id, 'professorIds')"
+                        class="picker-btn">
+                        <span>{{ p.name }}</span>
+                        @if (isStaffSelected(p.id, 'professorIds')) { <svg viewBox="0 0 20 20" fill="currentColor" class="check"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> }
+                      </button>
+                    }
+                  </div>
+                </div>
+                <div>
+                  <label class="item-label col-o">Teaching Assistant(s)</label>
+                  <div class="staff-picker border-o">
+                    @for (t of tas(); track t.id) {
+                      <button type="button" (click)="toggleSelection(t.id, 'taIds')"
+                        [class.selected-ta]="isStaffSelected(t.id, 'taIds')"
+                        class="picker-btn">
+                        <span>{{ t.name }}</span>
+                        @if (isStaffSelected(t.id, 'taIds')) { <svg viewBox="0 0 20 20" fill="currentColor" class="check"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> }
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-footer-btns border-top">
+                <button type="button" (click)="showCourseModal.set(false)" class="cancel-btn">Cancel</button>
+                <button type="submit" [disabled]="courseForm.invalid" class="submit-btn btn-gradient">
+                  {{ editingCourse() ? 'Save Structure' : 'Publish Track' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
+      <!-- PROFILE VIEW -->
+      @if (viewingUser()) {
+        <div class="modal-overlay overlay-right">
+           <div class="drawer animate-slide-in">
+              <div class="drawer-header">
+                 <h3 class="drawer-title gradient-text">Member Profile</h3>
+                 <button (click)="viewingUser.set(null)" class="close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                 </button>
+              </div>
+              <div class="drawer-body custom-scroll">
+                 <div class="drawer-profile-top">
+                    <div class="drawer-avatar profile-gradient">{{ viewingUser()?.name?.charAt(0) }}</div>
+                    <div>
+                       <h4 class="drawer-name">{{ viewingUser()?.name }}</h4>
+                       <span class="role-tag-mini">{{ viewingUser()?.role }} Member</span>
+                    </div>
+                 </div>
+                 <div class="drawer-details">
+                    <div class="detail-box">
+                       <label class="detail-label">Communications</label>
+                       <p class="detail-val">{{ viewingUser()?.email }}</p>
+                    </div>
+                    <div class="detail-box">
+                       <label class="detail-label">Identity Status</label>
+                       <div class="status-indicator-box">
+                          <span class="dot" [ngClass]="viewingUser()?.status === 'active' ? 'bg-green' : 'bg-orange'"></span>
+                          <p class="detail-val cap">{{ viewingUser()?.status }}</p>
+                       </div>
+                    </div>
+                    <div class="detail-box">
+                       <label class="detail-label">Curriculum Assignments</label>
+                       <div class="assignment-list">
+                          @for (cid of viewingUser()?.courses; track cid) {
+                            <div class="assignment-item">
+                               <span class="item-course-name">{{ getCourseName(cid) }}</span>
+                               <span class="item-course-code">{{ getCourseCode(cid) }}</span>
+                            </div>
+                          } @empty {
+                            <div class="empty-assignments">No active assignments found.</div>
+                          }
+                       </div>
+                    </div>
+                 </div>
+              </div>
+              <button (click)="viewingUser.set(null)" class="footer-action-btn btn-gradient">Finalize Review</button>
+           </div>
+        </div>
+      }
+      <button class="floating-logout-btn" (click)="onLogout()" title="logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+

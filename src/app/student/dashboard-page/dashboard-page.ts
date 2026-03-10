@@ -1,29 +1,32 @@
-// src/app/pages/dashboard-page/dashboard-page.component.ts
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { RouterModule } from '@angular/router';
-import { Navbar } from '../../dashboard/navbar/navbar';
-import { Dashboard } from "../../dashboard/dashboard";
-
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { Navbar } from "../../dashboard/navbar/navbar";
+import { RouterLink } from '@angular/router'; 
 @Component({
   selector: 'app-dashboard-page',
-  standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, RouterModule, Navbar, Dashboard],
   templateUrl: './dashboard-page.html',
-  styleUrls: ['./dashboard-page.css']
+  styleUrls: ['./dashboard-page.css'],
+  imports: [Navbar,RouterLink]
 })
-export class DashboardPageComponent {
+export class DashboardPageComponent implements OnInit {
   stats = {
     available: 3,
     completed: 12,
-    average: 85
+    average: 88
   };
 
   exams = [
-    { title: 'Binary Trees Quiz', course: 'Data Structures', time: 45 },
-    { title: 'Sorting Algorithms Test', course: 'Algorithms', time: 60 },
-    { title: 'JavaScript Fundamentals', course: 'Web Development', time: 30 }
+    { title: 'Midterm Data Structures', course: 'Data Structures', time: 60 },
+    { title: 'Final Algorithms Quiz', course: 'Algorithms', time: 45 },
+    { title: 'Web Development Basics', course: 'Web Dev', time: 30 }
   ];
+
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {}
+
+  logout() {
+    localStorage.clear();
+    this.router.navigate(['/login']);
+  }
 }

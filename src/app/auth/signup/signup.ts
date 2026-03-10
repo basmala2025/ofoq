@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { Navbar } from "../../navbar/navbar";
 
 @Component({
@@ -10,58 +10,66 @@ import { Navbar } from "../../navbar/navbar";
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, Navbar],
   templateUrl: './signup.html',
-  styleUrls: ['./signup.css']
+  styleUrls: ['./signup.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class Signup implements OnInit {
   signupForm!: FormGroup;
-  isLoading: boolean = false;
+  isLoading = false;
 
-  constructor(
-    private fb: FormBuilder,
-    private router: Router
-  ) {}
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private fb = inject(FormBuilder);
+  private readonly apiUrl = 'https://ofoqai.runasp.net/api/Auth/register';
 
   ngOnInit(): void {
     this.signupForm = this.fb.group({
       fullName: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      userType: ['', Validators.required]
-    });
+      id: ['', [Validators.required, Validators.pattern(/^[0-9]+$/)]],
+      email: ['', [
+        Validators.required,
+        Validators.email,
+        Validators.pattern(/^[a-zA-Z0-9._%+-]+@edu\.bu\.eg$/)
+      ]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator });
+  }
+
+  passwordMatchValidator(g: FormGroup) {
+    return g.get('password')?.value === g.get('confirmPassword')?.value
+      ? null : {'mismatch': true};
   }
 
   onSubmit(): void {
-    if (this.signupForm.invalid) {
-      this.signupForm.markAllAsTouched();
-      return;
-    }
+    if (this.signupForm.valid) {
+      this.isLoading = true;
 
-    this.isLoading = true;
-
-    // محاكاة تأخير الشبكة (Network Delay)
-    setTimeout(() => {
-      const { fullName, email, userType } = this.signupForm.value;
-
-      // 1. تجهيز بيانات المستخدم الوهمية
-      const mockUser = {
-        id: 'mock-id-' + Math.random().toString(36).substr(2, 9),
-        fullName: fullName,
-        email: email,
-        userType: userType // 'professor' أو 'student'
+      const payload = {
+        fullName: this.signupForm.value.fullName,
+        email: this.signupForm.value.email,
+        password: this.signupForm.value.password,
+        confirmPassword: this.signupForm.value.confirmPassword,
+        academicId: this.signupForm.value.id,
+        role: 0
       };
 
-      // 2. تخزين البيانات في LocalStorage (كأننا عملنا Login)
-      localStorage.setItem('userToken', 'mock-jwt-token-12345');
-      localStorage.setItem('currentUser', JSON.stringify(mockUser));
+      this.http.post(this.apiUrl, payload).subscribe({
+        next: (res: any) => {
+          localStorage.setItem('userToken', res.token);
+          localStorage.setItem('userRole', '0');
+          localStorage.setItem('isLoggedIn', 'true');
+          localStorage.setItem('currentUser', JSON.stringify(res));
 
-      // 3. التوجيه للداش بورد الصحيحة بناءً على النوع
-      // استخدمنا replaceUrl: true لمنع الرجوع لصفحة الـ Signup بـ Back
-      const target = userType === 'professor' ? '/dashboard' : '/dashboardstudent';
-
-      this.router.navigate([target], { replaceUrl: true });
-
-      this.isLoading = false;
-      console.log('Mock Signup & Login Successful:', mockUser);
-    }, 1500);
+          this.router.navigate(['/dashboardstudent'], { replaceUrl: true });
+        },
+        error: (err) => {
+          console.error('Signup Error:', err);
+          const errorMessage = err.error?.message || 'فشل إنشاء الحساب. تأكد من البيانات أو الاتصال.';
+          alert(errorMessage);
+          this.isLoading = false;
+        }
+      });
+    }
   }
 }

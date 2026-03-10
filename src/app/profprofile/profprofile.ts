@@ -26,7 +26,6 @@ export class Profprofile implements OnInit {
   constructor(private dataService: Data) {}
 
   ngOnInit(): void {
-    // جلب بيانات الطبيب والكورسات من السيرفس
     this.doctor = this.dataService.getDoctorProfile();
     this.assignedCourses = this.dataService.getCourses();
   }

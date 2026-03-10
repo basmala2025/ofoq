@@ -1,9 +1,32 @@
-export interface Course {
-  id: number;
+// src/app/models/schema.model.ts
+export interface User {
+  id: string;
   name: string;
+  email: string;
+  role: 'admin' | 'prof' | 'std' | 'ta';
+  status: 'active' | 'invited';
+  courses?: string[]; // IDs of courses
+  enrolledInstructors?: string[]; // For Students only
+}
+
+export interface Course {
+  id: string;
   code: string;
-  professor: string; 
-  icon: string;
+  name: string;
+  professors: string[]; // IDs of Doctors
+  teachingAssistants: string[]; // IDs of TAs
+  isPublished: boolean;
+}
+
+
+export interface Session {
+  id: number;
+  courseId: number;
+  date: string;
+  duration: string;
+  attendance: string;
+  focus: string;
+  focusLevel: 'High' | 'Medium' | 'Low';
 }
 
 export interface DoctorProfile {
@@ -13,14 +36,4 @@ export interface DoctorProfile {
   department: string;
   position: string;
   avatar: string;
-}
-
-export interface Session {
-  id: number;
-  courseId: number;       // هذا ما كان ينقصك وحل مشكلة الخطأ
-  date: string;
-  duration: string;
-  attendance: string;     // للنسبة المئوية مثل '95%'
-  focus: string;          // للنسبة المئوية مثل '87%'
-  focusLevel: 'High' | 'Medium' | 'Low'; // أضفتها لكِ ليعمل ستايل الـ React
 }

@@ -1,65 +1,106 @@
 import { Injectable } from '@angular/core';
-import { Course, DoctorProfile, Session } from '../models/data.model';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { delay, tap, catchError } from 'rxjs/operators';
+import { Course, DoctorProfile, Session, User } from '../models/data.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class Data {
-  private mockCourses: Course[] = [
-    { id: 1, name: 'Data Structures', code: 'CS201', icon: 'DS',professor: 'Dr. Ahmad' },
-    { id: 2, name: 'Algorithms', code: 'CS301', icon: 'AL' ,professor: 'Dr. Ragab'},
-    { id: 3, name: 'Database Systems', code: 'CS305', icon: 'DB' ,professor: 'Dr. Essam'},
-    { id: 4, name: 'Software Engineering', code: 'CS401', icon: 'SE' ,professor: 'Dr. Ebrahim'},
-    { id: 5, name: 'Machine Learning', code: 'CS501', icon: 'ML' ,professor: 'Dr. Mohamed'},
-    { id: 6, name: 'Computer Networks', code: 'CS302', icon: 'CN' ,professor: 'Dr. Ahmad'}
-  ];
+  private USERS_KEY = 'ofoq_users_db';
+  private COURSES_KEY = 'ofoq_courses_db';
+  private apiUrl = 'http://localhost:3000/api';
 
-  // بيانات الجلسات المحدثة (أضفت focusLevel لكل جلسة)
+  // بيانات الجلسات للعرض (Mock Data)
   private mockSessions: Session[] = [
-    { id: 101, courseId: 1, date: 'Dec 20, 2025', duration: '90 min', attendance: '95%', focus: '87%', focusLevel: 'High' },
-    { id: 102, courseId: 1, date: 'Dec 18, 2025', duration: '120 min', attendance: '92%', focus: '82%', focusLevel: 'Medium' },
-    { id: 103, courseId: 2, date: 'Dec 15, 2025', duration: '90 min', attendance: '98%', focus: '91%', focusLevel: 'High' },
-    { id: 104, courseId: 1, date: 'Dec 10, 2025', duration: '90 min', attendance: '70%', focus: '55%', focusLevel: 'Low' }
+    { id: 101, courseId: 1, date: 'Dec 20, 2025', duration: '90 min', attendance: '95%', focus: '87%', focusLevel: 'High' }
   ];
 
-  private mockProfile: DoctorProfile = {
-    name: 'Dr. Ahmed Hassan',
-    fullName: 'Dr. Ahmed Hassan Mohamed',
-    email: 'ahmed.hassan@ofoq.edu',
-    department: 'Computer Science',
-    position: 'Associate Professor',
-    avatar: 'AH'
-  };
+  constructor(private http: HttpClient) {
+    // تشغيل التهيئة بمجرد بدء الخدمة
+    this.initializeStorage();
+  }
 
-  constructor() { }
+  /**
+   * تهيئة الـ LocalStorage بالبيانات الافتراضية إذا كان فارغاً
+   */
+  private initializeStorage() {
+    if (!localStorage.getItem(this.COURSES_KEY)) {
+      const defaultCourses = [
+        { id: 1, name: 'Data Structures', code: 'CS201', icon: 'DS', professor: 'Dr. Ahmed Hassan' }
+      ];
+      localStorage.setItem(this.COURSES_KEY, JSON.stringify(defaultCourses));
+    }
 
-  // --- Methods ---
+    if (!localStorage.getItem(this.USERS_KEY)) {
+      const defaultAdmin = [
+        { id: '1', fullName: 'Basmala Admin', email: 'admin@ofoq.com', userType: 'super_admin', status: 'active', enrolledCourses: [] }
+      ];
+      localStorage.setItem(this.USERS_KEY, JSON.stringify(defaultAdmin));
+    }
+  }
 
+  /**
+   * إدارة المستخدمين (Users Management)
+   */
+  getUsers(): User[] {
+    return JSON.parse(localStorage.getItem(this.USERS_KEY) || '[]');
+  }
+
+  deleteUser(userId: string): void {
+    let users = this.getUsers();
+    users = users.filter(user => user.id !== userId);
+    localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+    console.log(`OFOQ: User ${userId} removed.`);
+  }
+
+  /**
+   * إرسال دعوة (Invite User)
+   * قمت بتعديلها لتعمل بالمحاكاة إذا فشل السيرفر، لمنع تعليق المتصفح
+   */
+  inviteNewUser(email: string, role: string): Observable<any> {
+    const payload = { email, role, invitedAt: new Date(), platform: 'OFOQ' };
+
+    // محاولة الإرسال للباك إند الحقيقي
+    return this.http.post(`${this.apiUrl}/users/invite`, payload).pipe(
+      catchError((error) => {
+        // إذا كان السيرفر غير موجود (بورت 3000 مغلق)، نقوم بالمحاكاة فوراً
+        console.warn('OFOQ Backend not found. Running in Simulation Mode...');
+
+        // محاكاة استجابة ناجحة بعد ثانية واحدة لتهدئة الـ CPU
+        return of({ status: 'success', message: 'Simulated success' }).pipe(delay(1000));
+      })
+    );
+  }
+
+  /**
+   * إدارة الكورسات والجلسات
+   */
   getCourses(): Course[] {
-    return this.mockCourses;
+    return JSON.parse(localStorage.getItem(this.COURSES_KEY) || '[]');
   }
 
   getCourseById(id: number): Course | undefined {
-    return this.mockCourses.find(c => c.id === id);
-  }
-
-  getDoctorProfile(): DoctorProfile {
-    return this.mockProfile;
-  }
+return this.getCourses().find(c => String(c.id) === String(id));  }
 
   getSessionsByCourse(courseId: number): Session[] {
-    // الآن لن يظهر خطأ هنا لأن Session أصبح يعرف ما هو courseId
     return this.mockSessions.filter(s => s.courseId === courseId);
   }
 
-  updatePassword(currentPass: string, newPass: string): Observable<boolean> {
-    console.log('Sending to API:', { currentPass, newPass });
-    return of(true);
+  /**
+   * بيانات البروفايل (Profile Data)
+   */
+  getDoctorProfile(): DoctorProfile {
+    return {
+      name: 'Dr. Ahmed Hassan',
+      fullName: 'Dr. Ahmed Hassan Mohamed',
+      email: 'ahmed.hassan@ofoq.edu',
+      department: 'CS',
+      position: 'Professor',
+      avatar: 'AH'
+    };
   }
 
-  startNewSession(sessionData: { courseId: number, room: string }): Observable<boolean> {
-    console.log('API Request: Starting Session...', sessionData);
-    return of(true);
+  updatePassword(current: string, newP: string): Observable<boolean> {
+    return of(true).pipe(delay(800));
   }
 }

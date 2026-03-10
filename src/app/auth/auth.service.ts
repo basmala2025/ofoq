@@ -1,45 +1,99 @@
-import { Injectable, Injector } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
-import { Router } from '@angular/router';
-import { User } from './user.model';
+import { Injectable, signal } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class Auth {
-  private academicDomain = '.edu.bu.eg';
-  private router: Router;
+export type UserRole = 'std' | 'prof' | 'ta' | 'admin';
 
-  // Mock user database
-  private users: User[] = [
-    { email: 'student@edu.bu.eg', password: '123456', userType: 'student' ,fullName:'Ahmed'},
-    { email: 'professor@edu.bu.eg', password: '123456', userType: 'professor',fullName:'Basmala' }
-  ];
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: 'active' | 'invited';
+  courses: string[];
+}
 
-  constructor(private injector: Injector) {
-    this.router = this.injector.get(Router);
+export interface Course {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  professorIds: string[];
+  taIds: string[];
+}
+
+@Injectable({ providedIn: 'root' })
+export class DataService {
+  private usersSubject = new BehaviorSubject<User[]>([
+    { id: '1', name: 'Dr. Ahmed Salem', email: 'ahmed.s@ofoq.edu', role: 'prof', status: 'active', courses: ['c1'] },
+    { id: '2', name: 'Sarah Jenkins', email: 'sarah.j@ofoq.edu', role: 'ta', status: 'active', courses: ['c1'] },
+    { id: '3', name: 'John Doe', email: 'john.d@student.ofoq.edu', role: 'std', status: 'active', courses: ['c1'] },
+    { id: '4', name: 'Super Admin', email: 'admin@ofoq.edu', role: 'admin', status: 'active', courses: [] },
+  ]);
+
+  private coursesSubject = new BehaviorSubject<Course[]>([
+    { id: 'c1', name: 'Advanced Algorithms', code: 'CS401', description: 'Deep dive into complex algorithms and data structures.', professorIds: ['1'], taIds: ['2'] }
+  ]);
+
+  users = signal<User[]>(this.usersSubject.value);
+  courses = signal<Course[]>(this.coursesSubject.value);
+
+  inviteUser(email: string, role: UserRole) {
+    const newUser: User = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: 'Pending Invitation',
+      email,
+      role,
+      status: 'invited',
+      courses: []
+    };
+    this.updateUsersState([...this.users(), newUser]);
   }
 
-  signup(user: User): Observable<any> {
-    if (!user.email.endsWith(this.academicDomain)) {
-      return throwError(() => new Error('Only academic emails ending with .edu.bu.eg are allowed'));
-    }
-    // Simulate adding user to database
-    this.users.push(user);
-    console.log('Sign Up:', user);
-    return of({ success: true, user });
+  updateUser(updatedUser: User) {
+    const updated = this.users().map(u => u.id === updatedUser.id ? updatedUser : u);
+    this.updateUsersState(updated);
   }
 
-  login(email: string, password: string): Observable<any> {
-    // Find user in mock database
-    const user = this.users.find(u => u.email === email && u.password === password);
+  deleteUser(id: string) {
+    const updated = this.users().filter(u => u.id !== id);
+    this.updateUsersState(updated);
+  }
 
-    if (user) {
-      console.log('Login successful:', { email, userType: user.userType });
-      return of({ success: true, user: { email: user.email, userType: user.userType } });
-    } else {
-      console.log('Login failed:', { email });
-      return throwError(() => new Error('Invalid email or password'));
-    }
+  addCourse(courseData: Omit<Course, 'id'>) {
+    const newCourse: Course = { ...courseData, id: Math.random().toString(36).substr(2, 9) };
+    this.updateCoursesState([...this.courses(), newCourse]);
+    this.syncUserCourses(newCourse, [...courseData.professorIds, ...courseData.taIds]);
+  }
+
+  updateCourse(updatedCourse: Course) {
+    const updated = this.courses().map(c => c.id === updatedCourse.id ? updatedCourse : c);
+    this.updateCoursesState(updated);
+    this.syncUserCourses(updatedCourse, [...updatedCourse.professorIds, ...updatedCourse.taIds]);
+  }
+
+  deleteCourse(id: string) {
+    const updated = this.courses().filter(c => c.id !== id);
+    this.updateCoursesState(updated);
+  }
+
+  private updateUsersState(users: User[]) {
+    this.users.set(users);
+    this.usersSubject.next(users);
+  }
+
+  private updateCoursesState(courses: Course[]) {
+    this.courses.set(courses);
+    this.coursesSubject.next(courses);
+  }
+
+  private syncUserCourses(course: Course, staffIds: string[]) {
+    const updatedUsers = this.users().map(u => {
+      const hasCourse = u.courses.includes(course.id);
+      const isAssigned = staffIds.includes(u.id);
+      if (isAssigned && !hasCourse) return { ...u, courses: [...u.courses, course.id] };
+      else if (!isAssigned && hasCourse) return { ...u, courses: u.courses.filter(id => id !== course.id) };
+      return u;
+    });
+    this.updateUsersState(updatedUsers);
   }
 }

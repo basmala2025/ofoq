@@ -1,67 +1,48 @@
 <app-navbar></app-navbar>
 
-<div class="fil">
-
-</div>
-    <div class="container">
-        <div class="logo">
-            <div class="logo-icon">
-                <img src="logo-removebg-preview.png" alt="" width="100px">
-            </div>
-            <h1>OFOQ</h1>
-        </div>
-
-
-
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-
-
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <div class="input-wrapper">
-                    <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                    </svg>
-                    <input type="email" id="email" formControlName="email" placeholder="your.email@university" required>
-                </div>
-                @if(loginForm.get('email')?.invalid && loginForm.get('email')?.touched){
-                <span class="error-message">
-                    Email must be a valid academic email
-                </span>
-              }
-            </div>
-
-
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <div class="input-wrapper">
-                    <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    <input type="password" id="password" formControlName="password" placeholder="••••••••" required>
-                </div>
-                <div class="password-strength">
-                    <div class="strength-bar">
-                        <div class="strength-fill" id="strength-fill"></div>
-                    </div>
-                    <span id="strength-text"></span>
-                </div>
-                @if(loginForm.get('password')?.invalid && loginForm.get('password')?.touched){
-                <span class="error-message">
-                    Password must be at least 8 characters
-                </span>
-              }
-            </div>
-
-            <button type="submit" class="submit-btn" id="signup-btn" [disabled]="loginForm.invalid">Log In</button>
-        </form>
-
-        <div class="form-footer">
-             Don't have an account?  <a [routerLink]="['/signup']">Create Account</a>
-        </div>
+<div class="container">
+    <div class="logo">
+        <img src="logo-removebg-preview.png" alt="OFOQ" width="100px">
+        <h1>OFOQ</h1>
     </div>
 
-    <p class="copyright">© 2025 BFCAI System. All rights reserved.</p>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+            <label for="email">Academic Email</label>
+            <div class="input-wrapper" [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <input type="email" id="email" formControlName="email" placeholder="name@edu.bu.eg">
+            </div>
+            @if(loginForm.get('email')?.invalid && loginForm.get('email')?.touched){
+                <span class="error-msg">Please enter a valid university email.</span>
+            }
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper" [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <input type="password" id="password" formControlName="password" placeholder="••••••••">
+            </div>
+            @if(loginForm.get('password')?.invalid && loginForm.get('password')?.touched){
+                <span class="error-msg">Password is required.</span>
+            }
+        </div>
+
+        <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || isLoading">
+            {{ isLoading ? 'Logging in...' : 'Log In' }}
+        </button>
+    </form>
+
+    <div class="form-footer">
+        Don't have an account? <a [routerLink]="['/signup']">Create Account</a>
+    </div>
+</div>
+
+<p class="copyright">© 2026 OFOQ System. All rights reserved.</p>

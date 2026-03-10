@@ -9,15 +9,14 @@ import { Dashboard } from './dashboard/dashboard';
 import { Home } from './home/home';
 import { Signup } from './auth/signup/signup';
 import { Login } from './auth/login/login';
+import { App } from './admin/admin-management/admin-management';
 
 export const routes: Routes = [
-  // 1. مسارات عامة لكن ممنوع الرجوع لها لو مسجل دخول (Guest Routes)
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'home', component: Home, canActivate: [guestGuard] },
   { path: 'signup', component: Signup, canActivate: [guestGuard] },
   { path: 'login', component: Login, canActivate: [guestGuard] },
 
-  // 2. مسارات الدكتور (Professor Routes)
   {
     path: 'dashboard',
     component: Dashboard,
@@ -39,7 +38,6 @@ export const routes: Routes = [
   { path: 'summary', component: SessionSummary, canActivate: [authGuard] },
   { path: 'profprofile', component: Profprofile, canActivate: [authGuard] },
 
-  // 3. مسارات الطالب (Student Routes)
   {
     path: 'dashboardstudent',
     loadComponent: () => import('./student/dashboard-page/dashboard-page').then(m => m.DashboardPageComponent),
@@ -55,8 +53,12 @@ export const routes: Routes = [
     path: 'exam',
     loadComponent: () => import('./student/exam-editor/exam-editor').then(m => m.ExamEditorComponent),
     canActivate: [authGuard],
-    canDeactivate: [confirmExitGuard] // بيسأل الطالب قبل ما يقفل الصفحة
+    canDeactivate: [confirmExitGuard]
   },
   { path: 'results', loadComponent: () => import('./student/results/results').then(m => m.Results), canActivate: [authGuard] },
   { path: 'stdprofile', component: Stdprofile, canActivate: [authGuard] },
+  {
+    path: 'admin-dashboard',
+    component: App,
+  }
 ];

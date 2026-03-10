@@ -1,127 +1,88 @@
 <app-navbar></app-navbar>
 
-    <div class="container">
-        <div class="logo">
-            <div class="logo-icon">
-                <img src="logo-removebg-preview.png" alt="" width="100px">
-            </div>
-            <h1>OFOQ</h1>
-        </div>
-
-
-
-        <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
-            <div class="form-group">
-                <label>Select Your Role</label>
-                <div class="role-selector">
-                    <div class="role-option">
-                        <input type="radio" id="student" formControlName="userType" value="student">
-                        <label for="student" class="role-label">
-                            <span>Student</span>
-                        </label>
-                    </div>
-
-
-                    <div class="role-option">
-                        <input type="radio" id="professor" formControlName="userType" value="professor">
-                        <label for="professor" class="role-label">
-                            <span>Professor</span>
-                        </label>
-                    </div>
-                    <div class="role-option">
-                        <input type="radio" id="admin" formControlName="userType" value="admin">
-                        <label for="admin" class="role-label">
-                            <span>Admin</span>
-                        </label>
-                    </div>
-                </div>
-                @if(signupForm.get('userType')?.invalid && signupForm.get('userType')?.touched){
-                <div class="error-message">
-                    User type is required
-                </div>
-              }
-            </div>
-
-
-
-            <div class="form-group">
-                <label for="fullname">Full Name</label>
-                <div class="input-wrapper">
-                    <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    <input type="text" id="fullname" formControlName="fullName" placeholder="Ahmed Essam.." required>
-                </div>
-                @if(signupForm.get('fullName')?.invalid && signupForm.get('fullName')?.touched){
-                <span class="error-message">
-                    Please enter your full name
-                </span>
-              }
-            </div>
-
-
-
-
-<div class="form-group">
-  <label for="email">Email Address</label>
-  <div class="input-wrapper">
-    <input
-      type="email"
-      id="email"
-      formControlName="email"
-      placeholder="example@edu.bu.eg"
-      required
-    >
-  </div>
-
-  @if (signupForm.get('email')?.touched && signupForm.get('email')?.invalid) {
-
-    @if (signupForm.get('email')?.errors?.['required']) {
-      <span class="error-message">Email is required.</span>
-    }
-
-    @if (signupForm.get('email')?.errors?.['email']) {
-      <span class="error-message">Please enter a valid email address.</span>
-    }
-
-    @if (signupForm.get('email')?.errors?.['pattern']) {
-      <span class="error-message">
-        Email must end with <strong>.edu.bu.eg</strong>
-      </span>
-    }
-  }
-</div>
-
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <div class="input-wrapper">
-                    <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    <input type="password" id="password" formControlName="password" placeholder="••••••••" required>
-                </div>
-                <div class="password-strength">
-                    <div class="strength-bar">
-                        <div class="strength-fill" id="strength-fill"></div>
-                    </div>
-                    <span id="strength-text"></span>
-                </div>
-                @if(signupForm.get('password')?.invalid && signupForm.get('password')?.touched){
-                <span class="error-message">
-                    Password must be at least 8 characters
-                </span>
-              }
-            </div>
-
-            <button type="submit" class="submit-btn" id="signup-btn" [disabled]="signupForm.invalid">Create Account</button>
-        </form>
-
-        <div class="form-footer">
-            Already have an account? <a [routerLink]="['/login']">Login</a>
-        </div>
+<div class="container">
+    <div class="logo">
+        <img src="logo-removebg-preview.png" alt="OFOQ" width="100px">
+        <h1>OFOQ</h1>
     </div>
 
-    <p class="copyright">© 2025 BFCAI System. All rights reserved.</p>
+    <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+            <label for="fullname">Full Name</label>
+            <div class="input-wrapper" [class.is-invalid]="signupForm.get('fullName')?.invalid && signupForm.get('fullName')?.touched">
+                <input type="text" id="fullname" formControlName="fullName" placeholder="e.g., Ahmed Ali">
+            </div>
+            @if (signupForm.get('fullName')?.touched && signupForm.get('fullName')?.invalid) {
+                <div class="error-box">
+                    <span class="error-text">Full name is required to identify your account.</span>
+                </div>
+            }
+        </div>
+
+        <div class="form-group">
+            <label for="academicId">Academic ID</label>
+            <div class="input-wrapper" [class.is-invalid]="signupForm.get('id')?.invalid && signupForm.get('id')?.touched">
+                <input type="text" id="academicId" formControlName="id" placeholder="Enter your ID number">
+            </div>
+            @if (signupForm.get('id')?.touched && signupForm.get('id')?.invalid) {
+                <div class="error-box">
+                    <span class="error-text">A valid Academic ID is required.</span>
+                </div>
+            }
+        </div>
+
+        <div class="form-group">
+            <label for="email">Academic Email</label>
+            <div class="input-wrapper" [class.is-invalid]="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">
+                <input type="email" id="email" formControlName="email" placeholder="example@edu.bu.eg">
+            </div>
+            @if (signupForm.get('email')?.touched && signupForm.get('email')?.invalid) {
+                <div class="error-box">
+                    @if (signupForm.get('email')?.errors?.['required']) {
+                        <span class="error-text">Email address is required.</span>
+                    }
+                    @if (signupForm.get('email')?.errors?.['pattern']) {
+                        <span class="error-text">Please use your university email (.edu.bu.eg).</span>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper" [class.is-invalid]="signupForm.get('password')?.invalid && signupForm.get('password')?.touched">
+                <input type="password" id="password" formControlName="password" placeholder="••••••••">
+            </div>
+            @if (signupForm.get('password')?.touched && signupForm.get('password')?.invalid) {
+                <div class="error-box">
+                    @if (signupForm.get('password')?.errors?.['required']) {
+                        <span class="error-text">Password is required to protect your account.</span>
+                    }
+                    @if (signupForm.get('password')?.errors?.['minlength']) {
+                        <span class="error-text">Password must be at least 8 characters.</span>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="input-wrapper" [class.is-invalid]="signupForm.get('confirmPassword')?.invalid && signupForm.get('confirmPassword')?.touched">
+                <input type="password" id="confirmPassword" formControlName="confirmPassword" placeholder="••••••••">
+            </div>
+            @if (signupForm.get('confirmPassword')?.touched && signupForm.get('confirmPassword')?.invalid) {
+                <div class="error-box">
+                    <span class="error-text">Please confirm your password.</span>
+                </div>
+            }
+        </div>
+
+        <button type="submit" class="submit-btn" [disabled]="signupForm.invalid || isLoading">
+            {{ isLoading ? 'Creating Account...' : 'Create Account' }}
+        </button>
+    </form>
+
+    <div class="form-footer">
+        Already have an account? <a [routerLink]="['/login']">Login</a>
+    </div>
+</div>
