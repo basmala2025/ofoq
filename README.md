@@ -3,6 +3,10 @@
 
 <p align="center">
   <img src="public/logo-removebg-preview.png" alt="OFOQ Logo" width="400">
+  [![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.io/)
+[![.NET Core](https://img.shields.io/badge/.NET_Core-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![AI Models](https://img.shields.io/badge/AI_Powered-HuggingFace-FF9D00?style=for-the-badge)](https://huggingface.co/)
 </p>
 
 [![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.io/)
