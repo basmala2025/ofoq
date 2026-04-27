@@ -1,8 +1,9 @@
 # 🎓 OFOQ (أفق) - The Smart Educational Ecosystem
 
-![OFOQ Dashboard](public/logo-removebg-preview.png)
 
-
+<p align="center">
+  <img src="public/logo-removebg-preview.png" alt="OFOQ Logo" width="400">
+</p>
 
 [![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.io/)
 [![.NET Core](https://img.shields.io/badge/.NET_Core-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
