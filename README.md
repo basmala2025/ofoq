@@ -1,4 +1,4 @@
-# OFOQ (أفق) - The Smart Educational Ecosystem
+#                   OFOQ (أفق) - The Smart Educational Ecosystem
 
 
 <p align="center">
