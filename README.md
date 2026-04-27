@@ -51,5 +51,5 @@ To get a local copy up and running, follow these simple steps.
 
 1. **Clone the repo**
    ```sh
-   git clone [https://github.com/your-username/OFOQ.git](https://github.com/your-username/OFOQ.git)
+   git clone [[https://<basmala2025>.github.io/<ofoq>/](https://<basmala2025>.github.io/<ofoq>/)
    
