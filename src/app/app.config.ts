@@ -1,11 +1,14 @@
-import { ApplicationConfig } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideRouter, withHashLocation } from '@angular/router';
+import { App } from './app';
 import { routes } from './app.routes';
+import { authInterceptor } from './auth-interceptor';
 
-export const appConfig: ApplicationConfig = {
+bootstrapApplication(App, {
   providers: [
-    provideRouter(routes),
-    provideHttpClient()
+    provideHttpClient(withInterceptors([authInterceptor])),
+
+    provideRouter(routes, withHashLocation())
   ]
-};
+}).catch(err => console.error(err));

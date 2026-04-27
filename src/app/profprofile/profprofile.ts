@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Data } from '../../app/services/data'; // تأكد من المسار الصحيح للسيرفس
+import { AuthService } from '../auth/auth.service';
 import { Course, DoctorProfile } from '../../app/models/data.model';
 
 @Component({
@@ -13,36 +13,43 @@ import { Course, DoctorProfile } from '../../app/models/data.model';
   styleUrls: ['./profprofile.css']
 })
 export class Profprofile implements OnInit {
+  doctorData: any;
   doctor!: DoctorProfile;
   assignedCourses: Course[] = [];
-
-  // نموذج بيانات كلمة المرور
   passwordData = {
     current: '',
     new: '',
     confirm: ''
   };
 
-  constructor(private dataService: Data) {}
+  constructor(private auth: AuthService) {}
 
-  ngOnInit(): void {
-    this.doctor = this.dataService.getDoctorProfile();
-    this.assignedCourses = this.dataService.getCourses();
+ ngOnInit() {
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  const userId = currentUser.id || currentUser.userId;
+
+  if (userId) {
+    this.auth.getDoctorProfile(userId).subscribe({
+      next: (profileData) => {
+        console.log('بيانات الدكتور اهي:', profileData);
+        // هنا تقدري تملي الفورم ببيانات الدكتور
+        this.doctorData = profileData;
+      },
+      error: (err) => console.error('فشل جلب بيانات البروفايل', err)
+    });
   }
+}
 
   changePassword() {
-    // التحقق من تطابق كلمة المرور
     if (this.passwordData.new !== this.passwordData.confirm) {
       alert('New passwords do not match!');
       return;
     }
 
-    // استدعاء السيرفس لتحديث كلمة المرور
-    this.dataService.updatePassword(this.passwordData.current, this.passwordData.new)
+    this.auth.updatePassword(this.passwordData.current, this.passwordData.new)
       .subscribe(success => {
         if (success) {
           alert('Password updated successfully!');
-          // تصفير الفورم
           this.passwordData = { current: '', new: '', confirm: '' };
         }
       });

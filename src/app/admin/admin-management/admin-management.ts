@@ -1,184 +1,93 @@
-import { Component, ChangeDetectionStrategy, signal, computed, inject, Injectable, type OnInit } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
-import { BehaviorSubject } from 'rxjs';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AdminDataService, User, Course } from '../../services/admin';
 import { Router } from '@angular/router';
 
-// --- MODELS ---
-type UserRole = 'std' | 'prof' | 'ta' | 'admin';
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  status: 'active' | 'invited';
-  courses: string[];
-}
-
-interface Course {
-  id: string;
-  name: string;
-  code: string;
-  description?: string;
-  professorIds: string[];
-  taIds: string[];
-}
-
-// --- STATE MANAGEMENT SERVICE ---
-@Injectable({ providedIn: 'root' })
-export class DataService {
-  // حقن الـ Router هنا لحل مشكلة الخطأ في الـ Service
-  private router = inject(Router);
-
-  private usersSubject = new BehaviorSubject<User[]>([
-    { id: '1', name: 'Dr. Ahmed Salem', email: 'ahmed.s@ofoq.edu', role: 'prof', status: 'active', courses: ['c1'] },
-    { id: '2', name: 'Sarah Jenkins', email: 'sarah.j@ofoq.edu', role: 'ta', status: 'active', courses: ['c1'] },
-    { id: '3', name: 'Ahmed Omar', email: 'ahmed.omar@student.ofoq.edu', role: 'std', status: 'active', courses: ['c1'] },
-    { id: '4', name: 'Super Admin', email: 'admin@ofoq.edu', role: 'admin', status: 'active', courses: [] },
-  ]);
-
-  private coursesSubject = new BehaviorSubject<Course[]>([
-    { id: 'c1', name: 'Advanced Algorithms', code: 'CS401', description: 'Deep dive into complex algorithms and data structures.', professorIds: ['1'], taIds: ['2'] }
-  ]);
-
-  users = signal<User[]>(this.usersSubject.value);
-  courses = signal<Course[]>(this.coursesSubject.value);
-
-  inviteUser(email: string, role: UserRole) {
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: 'Pending Invitation',
-      email,
-      role,
-      status: 'invited',
-      courses: []
-    };
-    this.updateUsersState([...this.users(), newUser]);
-  }
-
-  updateUser(updatedUser: User) {
-    const updated = this.users().map(u => u.id === updatedUser.id ? updatedUser : u);
-    this.updateUsersState(updated);
-  }
-
-  deleteUser(id: string) {
-    const updated = this.users().filter(u => u.id !== id);
-    this.updateUsersState(updated);
-  }
-
-  addCourse(courseData: Omit<Course, 'id'>) {
-    const newCourse: Course = { ...courseData, id: Math.random().toString(36).substr(2, 9) };
-    this.updateCoursesState([...this.courses(), newCourse]);
-    this.syncUserCourses(newCourse, [...courseData.professorIds, ...courseData.taIds]);
-  }
-
-  updateCourse(updatedCourse: Course) {
-    const updated = this.courses().map(c => c.id === updatedCourse.id ? updatedCourse : c);
-    this.updateCoursesState(updated);
-    this.syncUserCourses(updatedCourse, [...updatedCourse.professorIds, ...updatedCourse.taIds]);
-  }
-
-  deleteCourse(id: string) {
-    const updated = this.courses().filter(c => c.id !== id);
-    this.updateCoursesState(updated);
-  }
-
-  private updateUsersState(users: User[]) {
-    this.users.set(users);
-    this.usersSubject.next(users);
-  }
-
-  private updateCoursesState(courses: Course[]) {
-    this.courses.set(courses);
-    this.coursesSubject.next(courses);
-  }
-
-  private syncUserCourses(course: Course, staffIds: string[]) {
-    const updatedUsers = this.users().map(u => {
-      const hasCourse = u.courses.includes(course.id);
-      const isAssigned = staffIds.includes(u.id);
-      if (isAssigned && !hasCourse) return { ...u, courses: [...u.courses, course.id] };
-      else if (!isAssigned && hasCourse) return { ...u, courses: u.courses.filter(id => id !== course.id) };
-      return u;
-    });
-    this.updateUsersState(updatedUsers);
-  }
-
-  logout() {
-    localStorage.clear();
-    this.router.navigate(['/login']);
-  }
-}
-
 @Component({
-  selector: 'app-root',
+  selector: 'app-admin-management',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './admin-management.html',
-  styleUrl: './admin-management.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './admin-management.html', // Link to your HTML file
+  styleUrls: ['./admin-management.css']
 })
-export class App implements OnInit {
-  dataService = inject(DataService);
-  fb = inject(FormBuilder);
-  router = inject(Router);
+export class AdminManagement {
+  // Service & Form Builder Injection
+  public dataService = inject(AdminDataService); // Public to allow direct access from HTML
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
 
+  // UI State Signals
   activeTab = signal<'users' | 'courses'>('users');
-  selectedRoleFilter = signal<UserRole | 'all'>('all');
+  selectedRoleFilter = signal<string>('all');
 
-  showUserModal = signal(false);
+  // Modals Visibility
+  showUserModal = signal<boolean>(false);
+  showCourseModal = signal<boolean>(false);
+
+  // Currently selected items for editing/viewing
   editingUser = signal<User | null>(null);
-  userForm: FormGroup;
-
-  showCourseModal = signal(false);
   editingCourse = signal<Course | null>(null);
-  courseForm: FormGroup;
-
   viewingUser = signal<User | null>(null);
 
-  roles: { id: UserRole | 'all', label: string }[] = [
-    { id: 'all', label: 'All Users' },
-    { id: 'std', label: 'Students' },
-    { id: 'prof', label: 'Professors' },
-    { id: 'ta', label: 'TAs' },
-    { id: 'admin', label: 'Admins' },
+  // Forms
+  userForm!: FormGroup;
+  courseForm!: FormGroup;
+
+  // Filter Categories
+  roles = [
+    { id: 'all', label: 'All Members' },
+    { id: 'Student', label: 'Students' },
+    { id: 'Professor', label: 'Professors' },
+    { id: 'TA', label: 'Teaching Assistants' },
+    { id: 'Admin', label: 'Admins' }
   ];
 
+  // Computed signal to filter users based on selected role
   filteredUsers = computed(() => {
-    const all = this.dataService.users();
     const filter = this.selectedRoleFilter();
-    return filter === 'all' ? all : all.filter(u => u.role === filter);
+    const allUsers = this.dataService.users();
+    if (filter === 'all') return allUsers;
+    return allUsers.filter(u => u.role === filter);
   });
 
-  professors = computed(() => this.dataService.users().filter(u => u.role === 'prof'));
-  tas = computed(() => this.dataService.users().filter(u => u.role === 'ta'));
+  // Filtered lists for professors and TAs
+  professors = computed(() => this.dataService.users().filter(u => u.role === 'Professor'));
+  tas = computed(() => this.dataService.users().filter(u => u.role === 'TA'));
 
   constructor() {
+    this.initForms();
+  }
+
+  // Initialize Reactive Forms
+  private initForms() {
     this.userForm = this.fb.group({
-      name: [''],
+      fullName: [''], // Using fullName to match the PUT request requirements
       email: ['', [Validators.required, Validators.email]],
-      role: ['std', Validators.required]
+      role: ['Student', Validators.required]
     });
 
     this.courseForm = this.fb.group({
-      name: ['', Validators.required],
+      title: ['', Validators.required],
       code: ['', Validators.required],
       description: [''],
-      professorIds: [[] as string[], Validators.required],
-      taIds: [[] as string[]]
+      professorIds: [[]], // Array of strings for assigned professors
+      taIds: [[]]         // Array of strings for assigned TAs
     });
   }
 
-  ngOnInit() {}
+  // ================= TABS & MODALS LOGIC =================
 
-  getRoleClass(role: string) {
-    return 'badge-' + role;
+  // Switch between Users and Courses management tabs
+  switchTab(tab: 'users' | 'courses') {
+    this.activeTab.set(tab);
   }
 
+  // Open modal for creating a new user or course
   openCreateModal() {
     if (this.activeTab() === 'users') {
       this.editingUser.set(null);
-      this.userForm.reset({ role: 'std' });
+      this.userForm.reset({ role: 'Student' });
       this.showUserModal.set(true);
     } else {
       this.editingCourse.set(null);
@@ -187,74 +96,181 @@ export class App implements OnInit {
     }
   }
 
-  onLogout() {
-    this.dataService.logout();
-  }
+  // ================= USERS LOGIC =================
 
-  // --- ACTIONS (User & Course) ---
+  // Open modal to edit existing user data
   openEditUser(user: User) {
     this.editingUser.set(user);
-    this.userForm.patchValue({ name: user.name, email: user.email, role: user.role });
+    this.userForm.patchValue({
+      fullName: user.fullName, // Mapping to the correct property
+      email: user.email,
+      role: user.role
+    });
     this.showUserModal.set(true);
   }
 
+  // Handle user deletion with confirmation
+  deleteUser(userId: string) {
+    if (confirm('Are you sure you want to delete this user?')) {
+      this.dataService.deleteUser(userId).subscribe();
+    }
+  }
+
+  // View specific user details in a summary/modal
+  viewUserDetails(user: User) {
+    this.viewingUser.set(user);
+  }
+
+  // Handle User Form submission (Invite or Update)
   submitUser() {
     if (this.userForm.invalid) return;
-    const data = this.userForm.value;
-    const currentEdit = this.editingUser();
-    if (currentEdit) this.dataService.updateUser({ ...currentEdit, ...data });
-    else this.dataService.inviteUser(data.email, data.role);
-    this.showUserModal.set(false);
+
+    const formValue = this.userForm.value; // Expected: { fullName, email, role }
+    const currentUser = this.editingUser();
+
+    if (currentUser) {
+      // Edit Mode - Send PUT request
+      this.dataService.updateUser(currentUser.userId, formValue).subscribe(() => {
+        this.showUserModal.set(false);
+      });
+    } else {
+      // Create Mode - Send Invite via Admin ID
+      const currentAdminId = "666d6b51-219a-43bd-a180-65a281ee1acb";
+
+      this.dataService.inviteUser(formValue.email, formValue.role, currentAdminId).subscribe(() => {
+        this.showUserModal.set(false);
+      });
+    }
   }
 
-  deleteUser(id: string) {
-    if (confirm('Delete this member permanently?')) this.dataService.deleteUser(id);
-  }
+  // ================= COURSES LOGIC =================
 
+  // Open modal to edit existing course data
   openEditCourse(course: Course) {
     this.editingCourse.set(course);
     this.courseForm.patchValue({
-      name: course.name,
+      title: course.title,
       code: course.code,
-      description: course.description || '',
-      professorIds: course.professorIds,
-      taIds: course.taIds
+      description: course.description,
+      professorIds: course.professorIds || [],
+      taIds: course.taIds || []
     });
     this.showCourseModal.set(true);
   }
 
+  // Delete course based on ID
+  deleteCourse(id: string | undefined) {
+    if (id && confirm('Are you sure you want to delete this course?')) {
+      this.dataService.deleteCourse(id).subscribe();
+    }
+  }
+
+  // Handle Course Form submission (Create or Update)
   submitCourse() {
     if (this.courseForm.invalid) return;
-    const data = this.courseForm.value;
-    const currentEdit = this.editingCourse();
-    if (currentEdit) this.dataService.updateCourse({ ...currentEdit, ...data });
-    else this.dataService.addCourse(data);
-    this.showCourseModal.set(false);
+
+    const formValue = this.courseForm.value;
+    const currentCourse = this.editingCourse();
+    console.log('Course Payload:', this.courseForm.value);
+
+    if (currentCourse && currentCourse.courseId) {
+      // Edit Mode - Send PUT request
+      this.dataService.updateCourse(currentCourse.courseId, formValue).subscribe(() => {
+        this.showCourseModal.set(false);
+      });
+    } else {
+      // Create Mode - Send POST request
+      this.dataService.createCourse(formValue).subscribe(() => {
+        this.showCourseModal.set(false);
+      });
+    }
   }
 
-  toggleSelection(id: string, field: string) {
-    const current = this.courseForm.get(field)?.value || [];
-    const updated = current.includes(id) ? current.filter((x: string) => x !== id) : [...current, id];
-    this.courseForm.get(field)?.setValue(updated);
+  // === Course Staff Selection Logic (Custom UI Array Handlers) ===
+
+  // Toggle selection of Professor/TA in the course form
+  toggleSelection(staffId: string, formControlName: 'professorIds' | 'taIds') {
+    const currentArray: string[] = this.courseForm.get(formControlName)?.value || [];
+    const index = currentArray.indexOf(staffId);
+
+    if (index === -1) {
+      // Add to selection
+      this.courseForm.patchValue({ [formControlName]: [...currentArray, staffId] });
+    } else {
+      // Remove from selection
+      const newArray = currentArray.filter(id => id !== staffId);
+      this.courseForm.patchValue({ [formControlName]: newArray });
+    }
   }
 
-  isStaffSelected(id: string, field: string): boolean {
-    return this.courseForm.get(field)?.value?.includes(id);
+  // Check if a specific staff member is currently selected in the form
+  isStaffSelected(staffId: string, formControlName: 'professorIds' | 'taIds'): boolean {
+    const currentArray: string[] = this.courseForm.get(formControlName)?.value || [];
+    return currentArray.includes(staffId);
   }
 
-  getStaffNames(ids: string[]): string {
-    return this.dataService.users().filter(u => ids.includes(u.id)).map(u => u.name).join(', ') || 'Unassigned';
+  // Get display names for assigned staff based on their IDs
+  getStaffNames(ids: string[] | undefined): string {
+    if (!ids || ids.length === 0) return 'Not Assigned';
+    const allUsers = this.dataService.users();
+
+    // Map IDs to full names using userId for lookup
+    return ids.map(id => allUsers.find(u => u.userId === id)?.fullName || 'Unknown').join(', ');
   }
 
-  getCourseName(id: string): string {
-    return this.dataService.courses().find(c => c.id === id)?.name || 'Track Not Found';
+  // ================= HELPERS FOR HTML TEMPLATE =================
+
+  // Return CSS class based on user role
+  getRoleClass(role: string): string {
+    switch (role) {
+      case 'Admin': return 'role-admin';
+      case 'Professor': return 'role-prof';
+      case 'TA': return 'role-ta';
+      default: return 'role-student';
+    }
   }
 
-  getCourseCode(id: string): string {
-    return this.dataService.courses().find(c => c.id === id)?.code || '---';
+  // Return formatted display text for roles
+  getRoleText(role: string | undefined): string {
+    if (!role) return 'Unknown';
+    if (role === 'TA') return 'Teaching Assistant';
+    return role;
   }
 
-  viewUserDetails(user: User) {
-    this.viewingUser.set(user);
+  // Retrieve course IDs associated with a specific user
+  getUserCourses(user: User | null | undefined): string[] {
+    if (!user) return [];
+
+    // Filter courses where the user is listed as a professor or TA
+    return this.dataService.courses()
+      .filter(c =>
+        (c.professorIds && c.professorIds.includes(user.userId)) ||
+        (c.taIds && c.taIds.includes(user.userId))
+      )
+      .map(c => c.courseId as string);
+  }
+
+  // Helper to get course title by ID
+  getCourseTitle(courseId: string): string {
+    return this.dataService.courses().find(c => c.courseId === courseId)?.title || 'Unknown Course';
+  }
+
+  // Helper to get course code by ID
+  getCourseCode(courseId: string): string {
+    return this.dataService.courses().find(c => c.courseId === courseId)?.code || '';
+  }
+
+  // Logout function
+  onLogout() {
+    console.log('Logging out...');
+
+    // 1. Remove Token and user data from storage
+    localStorage.removeItem('token');
+
+    // (Optional) Clear all storage if needed:
+    // localStorage.clear();
+
+    // 2. Redirect user to Login page
+    this.router.navigate(['/login']);
   }
 }

@@ -1,26 +1,48 @@
-import { Component, OnInit, EventEmitter, Output } from '@angular/core';
-import { Data } from '../../services/data';
+import { Component, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { DataService } from '../../services/data';
 import { Course } from '../../models/data.model';
-import { RouterLink } from "@angular/router";
 
 @Component({
   selector: 'app-homedashboard',
   templateUrl: './homedashboard.html',
   styleUrls: ['./homedashboard.css'],
-  imports: [RouterLink]
+  standalone: true,
+  imports: [RouterLink] // Required for routing when a course card is clicked
 })
 export class homedashboard implements OnInit {
-  courses: Course[] = [];
-
-  @Output() courseSelected = new EventEmitter<Course>();
-
-  constructor(private dataService: Data) {}
+  public dataService = inject(DataService);
 
   ngOnInit(): void {
-    this.courses = this.dataService.getCourses();
+    // Retrieve and normalize user role from local storage
+    const userRole = localStorage.getItem('role')?.toLowerCase() || '';
+
+    if (userRole === 'admin' || userRole === '3') {
+      // Logic for Admin role (currently commented out)
+      // this.dataService.loadAllCourses().subscribe();
+    }
+    else if (userRole.includes('prof') || userRole === '2' || userRole.includes('ta') || userRole === '1') {
+
+      // Optimization: Only trigger the API call if the courses signal is currently empty
+      if (this.dataService.courses().length === 0) {
+        console.log('▶️ Fetching assigned courses from API...');
+        this.dataService.loadAssignedCourses().subscribe();
+      } else {
+        console.log('✅ Courses already loaded, skipping API call.');
+      }
+
+    }
+    else if (userRole.includes('std') || userRole === '0') {
+      // Logic for Student role (currently commented out)
+      // this.dataService.loadMyCourses().subscribe();
+    }
   }
 
+  /**
+   * Optional helper method triggered when a course is clicked.
+   * Note: Actual navigation is handled by RouterLink in the template.
+   */
   onCourseClick(course: Course) {
-    this.courseSelected.emit(course);
+    console.log('Course clicked:', course.title);
   }
 }

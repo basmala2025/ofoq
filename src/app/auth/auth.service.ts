@@ -1,99 +1,102 @@
-import { Injectable, signal } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-
-export type UserRole = 'std' | 'prof' | 'ta' | 'admin';
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  status: 'active' | 'invited';
-  courses: string[];
-}
-
-export interface Course {
-  id: string;
-  name: string;
-  code: string;
-  description?: string;
-  professorIds: string[];
-  taIds: string[];
-}
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, tap, map } from 'rxjs';
+import { User } from '../models/data.model';
 
 @Injectable({ providedIn: 'root' })
-export class DataService {
-  private usersSubject = new BehaviorSubject<User[]>([
-    { id: '1', name: 'Dr. Ahmed Salem', email: 'ahmed.s@ofoq.edu', role: 'prof', status: 'active', courses: ['c1'] },
-    { id: '2', name: 'Sarah Jenkins', email: 'sarah.j@ofoq.edu', role: 'ta', status: 'active', courses: ['c1'] },
-    { id: '3', name: 'John Doe', email: 'john.d@student.ofoq.edu', role: 'std', status: 'active', courses: ['c1'] },
-    { id: '4', name: 'Super Admin', email: 'admin@ofoq.edu', role: 'admin', status: 'active', courses: [] },
-  ]);
+export class AuthService {
+  private http = inject(HttpClient);
+  private baseUrl = 'https://ofoqai.runasp.net/api';
 
-  private coursesSubject = new BehaviorSubject<Course[]>([
-    { id: 'c1', name: 'Advanced Algorithms', code: 'CS401', description: 'Deep dive into complex algorithms and data structures.', professorIds: ['1'], taIds: ['2'] }
-  ]);
+  // Signals for user state management
+  users = signal<User[]>([]);
 
-  users = signal<User[]>(this.usersSubject.value);
-  courses = signal<Course[]>(this.coursesSubject.value);
-
-  inviteUser(email: string, role: UserRole) {
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: 'Pending Invitation',
-      email,
-      role,
-      status: 'invited',
-      courses: []
-    };
-    this.updateUsersState([...this.users(), newUser]);
-  }
-
-  updateUser(updatedUser: User) {
-    const updated = this.users().map(u => u.id === updatedUser.id ? updatedUser : u);
-    this.updateUsersState(updated);
-  }
-
-  deleteUser(id: string) {
-    const updated = this.users().filter(u => u.id !== id);
-    this.updateUsersState(updated);
-  }
-
-  addCourse(courseData: Omit<Course, 'id'>) {
-    const newCourse: Course = { ...courseData, id: Math.random().toString(36).substr(2, 9) };
-    this.updateCoursesState([...this.courses(), newCourse]);
-    this.syncUserCourses(newCourse, [...courseData.professorIds, ...courseData.taIds]);
-  }
-
-  updateCourse(updatedCourse: Course) {
-    const updated = this.courses().map(c => c.id === updatedCourse.id ? updatedCourse : c);
-    this.updateCoursesState(updated);
-    this.syncUserCourses(updatedCourse, [...updatedCourse.professorIds, ...updatedCourse.taIds]);
-  }
-
-  deleteCourse(id: string) {
-    const updated = this.courses().filter(c => c.id !== id);
-    this.updateCoursesState(updated);
-  }
-
-  private updateUsersState(users: User[]) {
-    this.users.set(users);
-    this.usersSubject.next(users);
-  }
-
-  private updateCoursesState(courses: Course[]) {
-    this.courses.set(courses);
-    this.coursesSubject.next(courses);
-  }
-
-  private syncUserCourses(course: Course, staffIds: string[]) {
-    const updatedUsers = this.users().map(u => {
-      const hasCourse = u.courses.includes(course.id);
-      const isAssigned = staffIds.includes(u.id);
-      if (isAssigned && !hasCourse) return { ...u, courses: [...u.courses, course.id] };
-      else if (!isAssigned && hasCourse) return { ...u, courses: u.courses.filter(id => id !== course.id) };
-      return u;
+  /**
+   * Helper to construct authorization headers using the stored token
+   */
+  private getHeaders() {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`
     });
-    this.updateUsersState(updatedUsers);
+  }
+
+  // ================= USER PROFILE & MANAGEMENT =================
+
+  /**
+   * Fetches profile data for a specific user (Doctor or otherwise)
+   * @param id The unique UserId
+   */
+  getDoctorProfile(id: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/Users/${id}`, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Fetches all users from the system (Admin access required)
+   * Includes mapping logic to handle .NET JSON response structures ($values)
+   */
+  getUsers(): Observable<User[]> {
+    return this.http.get<any>(`${this.baseUrl}/Users`, { headers: this.getHeaders() }).pipe(
+      map(res => {
+        // Handle cases where .NET wraps arrays in $values or data properties
+        const usersArray = res.$values || res.data || res || [];
+        return usersArray.map((u: any) => ({
+          // Normalize user identifiers and properties based on API schema
+          id: String(u.userId || u.id || u.Id || ''),
+          name: u.fullName || u.name || 'Unknown',
+          email: u.email,
+          role: String(u.role),
+          status: u.status
+        }));
+      }),
+      tap(mapped => this.users.set(mapped))
+    );
+  }
+
+  /**
+   * Invites a new user to the platform
+   * @param payload Object containing email and assigned role
+   */
+  inviteUser(payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/Users/invite`, payload, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Updates an existing user's information
+   * @param payload Object containing updated fields and userId
+   */
+  updateUser(payload: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/Users/${payload.userId}`, payload, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Deletes a user by ID and updates the local signal state
+   * @param id The UserId to be removed
+   */
+  deleteUser(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/Users/${id}`, { headers: this.getHeaders() }).pipe(
+      tap(() => {
+        // Filter out the deleted user from the signal state
+        this.users.update(all => all.filter(u => u.id !== id));
+      })
+    );
+  }
+
+  // ================= AUTHENTICATION =================
+
+  /**
+   * Updates the password for the current authenticated user
+   */
+  updatePassword(currentPassword: string, newPassword: string): Observable<any> {
+    const body = { currentPassword, newPassword };
+    return this.http.post(`${this.baseUrl}/Auth/change-password`, body, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Logs out the user by revoking the refresh token
+   * @param payload Contains refreshToken and revokeAllDevices flag
+   */
+  logout(payload: { refreshToken: string | null; revokeAllDevices: boolean }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/Auth/logout`, payload, { headers: this.getHeaders() });
   }
 }

@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { SocketService } from '../../services/socket';
 import { ExamService } from '../../services/exam';
 import loader from '@monaco-editor/loader';
+import * as signalR from '@microsoft/signalr';
 
 @Component({
   selector: 'app-exam-editor',
@@ -22,10 +23,17 @@ export class ExamEditorComponent implements AfterViewInit, OnDestroy {
   editor: any;
   private mediaStream: MediaStream | null = null;
   private streamInterval: any;
+  private audioRecorder: MediaRecorder | null = null;
 
-  // إحصائيات الأمان
+  // 💡 Connection channel to .NET Backend
+  private hubConnection!: signalR.HubConnection;
+
+  // Voice AI Model URL
+  private readonly VOICE_API_URL = 'https://gannaeslam38-ofoq-ai-engine.hf.space/analyze_audio';
+
+  // Security Statistics & State
   violationCount = 0;
-  isExamFinished = false; // متغير حرج لمنع التكرار
+  isExamFinished = false;
   isPanicMode = false;
   showSecurityToast = false;
   isRedAlarm = false;
@@ -33,19 +41,22 @@ export class ExamEditorComponent implements AfterViewInit, OnDestroy {
   cvActive = false;
   savedCodeKey = 'ofoq_exam_backup';
 
-  // تتبع حركة الرأس
-  private activeDirection = 'forward';
-  private directionStartTime = 0;
-  private alarmTriggeredForCurrent = false;
-
+  // Timer Configuration
   timeRemaining = 45 * 60;
   timerDisplay = '45:00';
   private timerInterval: any;
   output = `System Initialized. Status: Secure.`;
 
-  constructor(private router: Router, private socketService: SocketService, private examService: ExamService) {}
+  constructor(
+    private router: Router,
+    private socketService: SocketService,
+    private examService: ExamService
+  ) {}
 
-  // --- حماية النظام (Warnings) ---
+  // ==========================================
+  // --- 1. Environment Security & Tracking ---
+  // ==========================================
+
   @HostListener('document:contextmenu', ['$event'])
   preventRightClick(e: MouseEvent) {
     e.preventDefault();
@@ -56,101 +67,31 @@ export class ExamEditorComponent implements AfterViewInit, OnDestroy {
   handleKeyboard(e: KeyboardEvent) {
     const key = e.key.toLowerCase();
     const ctrl = e.ctrlKey || e.metaKey;
-    if ((ctrl && ['c', 'v', 'a', 'x', 's'].includes(key)) || e.key === 'F12') {
+    if ((ctrl && ['c', 'v', 'a', 'x', 's'].includes(key)) || e.key === 'f12') {
       e.preventDefault();
       this.showWarning(`Shortcut Ctrl+${key.toUpperCase()} Blocked! (Warning)`);
     }
   }
 
-  // --- حماية الـ Tabs (Alarm فوري) ---
   @HostListener('document:visibilitychange')
   onVisibilityChange() {
     if (document.hidden && !this.isExamFinished) {
       this.isPanicMode = true;
+      // Local browser alarm, no AI needed
       this.triggerViolentAlarm('ALARM: Tab Switch Detected!');
     } else {
       setTimeout(() => this.isPanicMode = false, 1500);
     }
   }
 
-  // --- منطق الـ AI والـ 5 ثوانٍ ---
-  listenToAI() {
-    this.socketService.aiReport$.subscribe((res: any) => {
-      if (this.isExamFinished) return; // توقف عن الاستماع إذا انتهى الامتحان
+  // ==========================================
+  // --- 2. System Initialization ---
+  // ==========================================
 
-      if (res.type === 'result' && res.data) {
-        const dir = res.data.direction.toLowerCase();
-        if (dir === 'forward' || dir === 'center') {
-          this.resetHeadState();
-        } else {
-          this.processHeadMovement(dir);
-        }
-      }
-    });
-  }
-
-  processHeadMovement(dir: string) {
-    const now = Date.now();
-    if (this.activeDirection !== dir) {
-      this.activeDirection = dir;
-      this.directionStartTime = now;
-      this.alarmTriggeredForCurrent = false;
-      this.showWarning(`Warning: Please look at the screen! (${dir})`);
-    } else if (!this.alarmTriggeredForCurrent) {
-      const elapsed = (now - this.directionStartTime) / 1000;
-      if (elapsed >= 5) {
-        this.alarmTriggeredForCurrent = true;
-        this.triggerViolentAlarm(`ALARM: Excessive Head Movement (${dir})!`);
-      }
-    }
-  }
-
-  resetHeadState() {
-    this.activeDirection = 'forward';
-    this.directionStartTime = 0;
-    this.alarmTriggeredForCurrent = false;
-  }
-
-  // --- إدارة التنبيهات وقفل الامتحان ---
-  showWarning(msg: string) {
-    if (this.isRedAlarm || this.isExamFinished) return;
-    this.securityMessage = msg;
-    this.isRedAlarm = false;
-    this.showSecurityToast = true;
-    this.output += `\n[Warning]: ${msg}`;
-    setTimeout(() => { if(!this.isRedAlarm) this.showSecurityToast = false; }, 3000);
-  }
-
-  triggerViolentAlarm(msg: string) {
-    if (this.isExamFinished) return;
-
-    this.violationCount++;
-    this.securityMessage = msg;
-    this.isRedAlarm = true;
-    this.showSecurityToast = true;
-    this.output += `\n[ALARM ${this.violationCount}/3]: ${msg}`;
-
-    this.playAlarmSound();
-
-    // القفل الفوري عند الوصول لـ 3 إنذارات
-    if (this.violationCount >= 3) {
-      this.output += `\n[CRITICAL]: 3 Alarms reached. Terminating session NOW.`;
-      // لا ننتظر طويلاً، نغلق الامتحان فوراً لضمان عدم استكمال الغش
-      setTimeout(() => this.submitSolution(), 1000);
-    } else {
-      setTimeout(() => { this.showSecurityToast = false; this.isRedAlarm = false; }, 5000);
-    }
-  }
-
-  private playAlarmSound() {
-    const audio = new Audio('assets/sounds/alert.mp3');
-    audio.play().catch(() => {});
-  }
-
-  // --- الـ Editor والـ Local Storage ---
   ngAfterViewInit() {
     this.initCamera();
     this.enterFullScreen();
+    // this.startSignalRConnection(); // 💡 Uncomment to start backend connection
 
     loader.init().then((monaco: any) => {
       const recovered = localStorage.getItem(this.savedCodeKey);
@@ -171,17 +112,198 @@ export class ExamEditorComponent implements AfterViewInit, OnDestroy {
     this.startTimer();
   }
 
-  // --- التحكم في الامتحان والإنهاء ---
+  // ==========================================
+  // --- 3. .NET SignalR Connection ---
+  // ==========================================
+
+  startSignalRConnection() {
+    this.hubConnection = new signalR.HubConnectionBuilder()
+      .withUrl('https://localhost:5001/examHub') // ⚠️ Adjust port based on your .NET project
+      .withAutomaticReconnect()
+      .build();
+
+    // Listen for incoming alarms from backend
+    this.hubConnection.on('ReceiveAlarm', (violationType: string) => {
+      if (!this.isExamFinished) {
+        this.triggerViolentAlarm(`ALARM: ${violationType}`);
+      }
+    });
+
+    this.hubConnection.start()
+      .then(() => console.log('✅ Connected to .NET SignalR Secure Channel'))
+      .catch(err => console.error('❌ SignalR Connection Error: ', err));
+  }
+
+  // ==========================================
+  // --- 4. A/V Streaming & AI Integration ---
+  // ==========================================
+
+  async initCamera() {
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640 },
+        audio: {
+          echoCancellation: true,    // Enable echo cancellation (crucial)
+          noiseSuppression: true,    // Suppress background noise/static
+          autoGainControl: false,    // Disable automatic gain control
+          channelCount: 1            // Set to Mono channel to reduce data size
+        }
+      });
+
+      if (this.videoElement?.nativeElement) {
+        this.videoElement.nativeElement.srcObject = this.mediaStream;
+        // ⚠️ Programmatically ensure video is muted to prevent feedback loop
+        this.videoElement.nativeElement.muted = true;
+        this.videoElement.nativeElement.volume = 0;
+      }
+
+      this.cvActive = true;
+      this.socketService.connectToAI(); // Connect to Python Vision API
+      this.startVideoStreaming();       // Start video streaming
+      this.startAudioMonitoring();      // Start audio monitoring
+
+    } catch {
+      this.output += '\nError: Camera and Microphone access required for secure environment.';
+    }
+  }
+
+  startVideoStreaming() {
+    this.streamInterval = setInterval(() => {
+      if (this.isExamFinished) return;
+      const video = this.videoElement?.nativeElement;
+
+      if (video && video.readyState === 4) {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d')?.drawImage(video, 0, 0);
+        this.socketService.sendFrame(canvas.toDataURL('image/jpeg', 0.4));
+        // 💡 Note: No AI response listener here. Frames are sent silently.
+      }
+    }, 250);
+  }
+
+  startAudioMonitoring() {
+    if (!this.mediaStream || this.isExamFinished) return;
+
+    console.log('🎙️ [Audio] Starting new 10-second recording cycle...');
+    this.audioRecorder = new MediaRecorder(this.mediaStream);
+    const chunks: BlobPart[] = [];
+
+    this.audioRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.push(event.data);
+    };
+
+    this.audioRecorder.onstop = () => {
+      console.log('⏹️ [Audio] Recording stopped. Preparing to send...');
+
+      if (!this.isExamFinished && chunks.length > 0) {
+        const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+        console.log(`📤 [Audio] Sending file to server... (Size: ${audioBlob.size} bytes)`);
+        this.sendAudioToHuggingFace(audioBlob);
+      } else {
+        console.warn('⚠️ [Audio] No audio recorded!');
+      }
+
+      // Half-second delay before next cycle to allow browser breathing room
+      if (!this.isExamFinished) {
+        setTimeout(() => this.startAudioMonitoring(), 500);
+      }
+    };
+
+    this.audioRecorder.start();
+
+    // Stop recording after 10 seconds
+    setTimeout(() => {
+      if (this.audioRecorder && this.audioRecorder.state === 'recording') {
+        this.audioRecorder.stop();
+      }
+    }, 10000);
+  }
+
+  async sendAudioToHuggingFace(audioBlob: Blob) {
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'exam_audio.webm');
+
+    try {
+      const response = await fetch(this.VOICE_API_URL, { method: 'POST', body: formData });
+
+      if (!response.ok) {
+        console.error(`❌ [Audio API] Request rejected! Status: ${response.status}`);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('✅ [Audio API] Server responded successfully:', data);
+
+      // Parse result and trigger alarm if cheating detected
+      if (data && (data.label === 1 || data.status !== 'Normal')) {
+        this.triggerViolentAlarm(`VOICE ALARM: Suspicious audio detected!`);
+      }
+
+    } catch (error) {
+      console.error('❌ [Audio API] Server offline or connection failed:', error);
+    }
+  }
+
+  // ==========================================
+  // --- 5. Alerts & Violation Logic ---
+  // ==========================================
+
+  showWarning(msg: string) {
+    if (this.isRedAlarm || this.isExamFinished) return;
+    this.securityMessage = msg;
+    this.isRedAlarm = false;
+    this.showSecurityToast = true;
+    this.output += `\n[Warning]: ${msg}`;
+    setTimeout(() => { if(!this.isRedAlarm) this.showSecurityToast = false; }, 3000);
+  }
+
+  triggerViolentAlarm(msg: string) {
+    if (this.isExamFinished) return;
+
+    this.violationCount++;
+    this.securityMessage = msg;
+    this.isRedAlarm = true;
+    this.showSecurityToast = true;
+    this.output += `\n[ALARM ${this.violationCount}/3]: ${msg}`;
+
+    if (this.violationCount >= 3) {
+      this.output += `\n[CRITICAL]: 3 Alarms reached. Terminating session NOW.`;
+      setTimeout(() => this.submitSolution(), 1000);
+    } else {
+      setTimeout(() => { this.showSecurityToast = false; this.isRedAlarm = false; }, 5000);
+    }
+  }
+
+  // ==========================================
+  // --- 6. Exam Execution & Submission ---
+  // ==========================================
+
+  runCode() {
+    if (this.isExamFinished) return;
+
+    const currentCode = this.editor.getValue();
+    this.output += `\n[${new Date().toLocaleTimeString()}] Running Code...`;
+
+    setTimeout(() => {
+      if (currentCode.trim() === '') {
+        this.output += `\n❌ Error: No code to run!`;
+      } else {
+        this.output += `\n✅ Execution finished successfully.\n[Output]: Standard test cases passed.`;
+      }
+      const consoleBody = document.querySelector('.console-body');
+      if (consoleBody) consoleBody.scrollTop = consoleBody.scrollHeight;
+    }, 1000);
+  }
+
   submitSolution() {
     if (this.isExamFinished) return;
-    this.isExamFinished = true; // نمنع أي محاولات تقديم أخرى
+    this.isExamFinished = true;
 
     this.output += `\nSystem: Finalizing submission...`;
-
-    // 1. إيقاف كل شيء فوراً
     this.stopEverything();
 
-    // 2. إرسال البيانات للسيرفر
     const studentCode = this.editor ? this.editor.getValue() : localStorage.getItem(this.savedCodeKey);
 
     this.examService.submitExam({
@@ -190,47 +312,24 @@ export class ExamEditorComponent implements AfterViewInit, OnDestroy {
       terminated: this.violationCount >= 3
     }).subscribe({
       next: () => this.goToResults(),
-      error: () => this.goToResults() // ننتقل للنتائج حتى لو فشل السيرفر
+      error: () => this.goToResults()
     });
   }
 
   private goToResults() {
-    localStorage.removeItem(this.savedCodeKey); // مسح النسخة الاحتياطية
-    this.router.navigate(['/results'], { replaceUrl: true }); // الانتقال الفوري لصفحة النتائج
+    localStorage.removeItem(this.savedCodeKey);
+    this.router.navigate(['/'], { replaceUrl: true });
   }
 
   private stopEverything() {
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(t => t.stop());
-    }
-    this.socketService.disconnect();
+    if (this.hubConnection) this.hubConnection.stop(); // 💡 Close .NET backend connection
+    if (this.audioRecorder && this.audioRecorder.state !== 'inactive') this.audioRecorder.stop();
+    if (this.mediaStream) this.mediaStream.getTracks().forEach(t => t.stop());
+    this.socketService.disconnect(); // Close Python socket connection
+
     if (this.streamInterval) clearInterval(this.streamInterval);
     if (this.timerInterval) clearInterval(this.timerInterval);
     if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-  }
-
-  // --- الكاميرا والـ Streaming ---
-  async initCamera() {
-    try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640 } });
-      if (this.videoElement?.nativeElement) this.videoElement.nativeElement.srcObject = this.mediaStream;
-      this.socketService.connectToAI();
-      this.listenToAI();
-      this.startStreaming();
-    } catch { this.output += '\nError: Camera access required.'; }
-  }
-
-  startStreaming() {
-    this.streamInterval = setInterval(() => {
-      if (this.isExamFinished) return;
-      const video = this.videoElement?.nativeElement;
-      if (video && video.readyState === 4) {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d')?.drawImage(video, 0, 0);
-        this.socketService.sendFrame(canvas.toDataURL('image/jpeg', 0.4));
-      }
-    }, 250);
   }
 
   startTimer() {
@@ -240,7 +339,9 @@ export class ExamEditorComponent implements AfterViewInit, OnDestroy {
         const m = Math.floor(this.timeRemaining / 60);
         const s = this.timeRemaining % 60;
         this.timerDisplay = `${m}:${s.toString().padStart(2, '0')}`;
-      } else { this.submitSolution(); }
+      } else {
+        this.submitSolution();
+      }
     }, 1000);
   }
 
@@ -248,27 +349,8 @@ export class ExamEditorComponent implements AfterViewInit, OnDestroy {
     const el = document.documentElement as any;
     if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
   }
-// أضف هذه الدالة داخل الكلاس
-runCode() {
-  if (this.isExamFinished) return;
 
-  const currentCode = this.editor.getValue();
-  this.output += `\n[${new Date().toLocaleTimeString()}] Running Code...`;
-
-  // محاكاة لعملية التشغيل - يمكنك مستقبلاً ربطها بـ API حقيقي لتشغيل الكود
-  setTimeout(() => {
-    if (currentCode.trim() === '') {
-      this.output += `\n❌ Error: No code to run!`;
-    } else {
-      this.output += `\n✅ Execution finished successfully.`;
-      this.output += `\n[Output]: Standard test cases passed.`;
-    }
-
-    const consoleBody = document.querySelector('.console-body');
-    if (consoleBody) {
-      consoleBody.scrollTop = consoleBody.scrollHeight;
-    }
-  }, 1000);
-}
-  ngOnDestroy() { this.stopEverything(); }
+  ngOnDestroy() {
+    this.stopEverything();
+  }
 }

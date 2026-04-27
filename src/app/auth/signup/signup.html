@@ -3,47 +3,41 @@
 <div class="container">
     <div class="logo">
         <img src="logo-removebg-preview.png" alt="OFOQ" width="100px">
-        <h1>OFOQ</h1>
+        <h1>{{ pageTitle() }}</h1>
     </div>
 
+    @if (isInvited()) {
+        <p class="invitation-msg">Welcome! Please complete your information to activate your institutional access.</p>
+    }
+
     <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+
         <div class="form-group">
             <label for="fullname">Full Name</label>
             <div class="input-wrapper" [class.is-invalid]="signupForm.get('fullName')?.invalid && signupForm.get('fullName')?.touched">
-                <input type="text" id="fullname" formControlName="fullName" placeholder="e.g., Ahmed Ali">
+                <input type="text" id="fullname" formControlName="fullName" placeholder="e.g., Dr. Ahmed Ali">
             </div>
-            @if (signupForm.get('fullName')?.touched && signupForm.get('fullName')?.invalid) {
-                <div class="error-box">
-                    <span class="error-text">Full name is required to identify your account.</span>
-                </div>
-            }
         </div>
 
         <div class="form-group">
-            <label for="academicId">Academic ID</label>
+            <label for="academicId">Academic ID / Code</label>
             <div class="input-wrapper" [class.is-invalid]="signupForm.get('id')?.invalid && signupForm.get('id')?.touched">
                 <input type="text" id="academicId" formControlName="id" placeholder="Enter your ID number">
             </div>
-            @if (signupForm.get('id')?.touched && signupForm.get('id')?.invalid) {
-                <div class="error-box">
-                    <span class="error-text">A valid Academic ID is required.</span>
-                </div>
-            }
         </div>
 
         <div class="form-group">
-            <label for="email">Academic Email</label>
-            <div class="input-wrapper" [class.is-invalid]="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">
-                <input type="email" id="email" formControlName="email" placeholder="example@edu.bu.eg">
+            <label for="email">Email Address</label>
+            <div class="input-wrapper"
+                 [class.is-invalid]="signupForm.get('email')?.invalid && signupForm.get('email')?.touched"
+                 [class.read-only-field]="isInvited()">
+                <input type="email" id="email" formControlName="email"
+                       [readonly]="isInvited()"
+                       placeholder="example@edu.bu.eg">
             </div>
-            @if (signupForm.get('email')?.touched && signupForm.get('email')?.invalid) {
+            @if (signupForm.get('email')?.touched && signupForm.get('email')?.invalid && !isInvited()) {
                 <div class="error-box">
-                    @if (signupForm.get('email')?.errors?.['required']) {
-                        <span class="error-text">Email address is required.</span>
-                    }
-                    @if (signupForm.get('email')?.errors?.['pattern']) {
-                        <span class="error-text">Please use your university email (.edu.bu.eg).</span>
-                    }
+                    <span class="error-text">Please use your university email (.edu.bu.eg).</span>
                 </div>
             }
         </div>
@@ -53,16 +47,6 @@
             <div class="input-wrapper" [class.is-invalid]="signupForm.get('password')?.invalid && signupForm.get('password')?.touched">
                 <input type="password" id="password" formControlName="password" placeholder="••••••••">
             </div>
-            @if (signupForm.get('password')?.touched && signupForm.get('password')?.invalid) {
-                <div class="error-box">
-                    @if (signupForm.get('password')?.errors?.['required']) {
-                        <span class="error-text">Password is required to protect your account.</span>
-                    }
-                    @if (signupForm.get('password')?.errors?.['minlength']) {
-                        <span class="error-text">Password must be at least 8 characters.</span>
-                    }
-                </div>
-            }
         </div>
 
         <div class="form-group">
@@ -70,19 +54,14 @@
             <div class="input-wrapper" [class.is-invalid]="signupForm.get('confirmPassword')?.invalid && signupForm.get('confirmPassword')?.touched">
                 <input type="password" id="confirmPassword" formControlName="confirmPassword" placeholder="••••••••">
             </div>
-            @if (signupForm.get('confirmPassword')?.touched && signupForm.get('confirmPassword')?.invalid) {
-                <div class="error-box">
-                    <span class="error-text">Please confirm your password.</span>
-                </div>
-            }
         </div>
 
         <button type="submit" class="submit-btn" [disabled]="signupForm.invalid || isLoading">
-            {{ isLoading ? 'Creating Account...' : 'Create Account' }}
+            {{ isLoading ? 'Processing...' : (isInvited() ? 'Activate Account' : 'Create Account') }}
         </button>
     </form>
 
-    <div class="form-footer">
+    <div class="form-footer" *ngIf="!isInvited()">
         Already have an account? <a [routerLink]="['/login']">Login</a>
     </div>
 </div>

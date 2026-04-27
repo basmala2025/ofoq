@@ -194,3 +194,163 @@
       height: 1.5rem;
       margin-left: 0.25rem;
     }
+/* Course Cards (Upgraded Theme) */
+   /* ==========================================
+   OFOQ THEMED COURSE CARDS
+   ========================================== */
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  padding: 0.5rem; /* عشان الظل ياخد راحته وميتقصش */
+}
+
+.course-card-unit {
+  background: #ffffff;
+  border-radius: 20px;
+  /* بوردر خفيف جداً واخد شعرة من اللون البنفسجي */
+  border: 1px solid rgba(95, 54, 158, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+}
+
+/* 🔴 السحر كله هنا: تأثير الـ Hover */
+.course-card-unit:hover {
+  transform: translateY(-8px);
+  /* ظل بنفسجي خفيف بيدي إيحاء بالوهج */
+  box-shadow: 0 20px 40px -10px rgba(95, 54, 158, 0.15);
+  border-color: rgba(95, 54, 158, 0.3);
+}
+
+/* الشريط الملون اللي فوق الكارت */
+.card-gradient-bar {
+  height: 6px;
+  width: 100%;
+  background: linear-gradient(90deg, #f47545 0%, #5f369e 100%);
+}
+
+.card-content-wrap {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 1.25rem;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* بادج كود المادة (واخد لون برتقالي هادي) */
+.course-code-tag {
+  background: rgba(244, 117, 69, 0.1);
+  color: #f47545;
+  padding: 0.4rem 1rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+/* زراير الأكشن (مخفية وبتظهر بنعومة من الجنب) */
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  opacity: 0;
+  transform: translateX(15px);
+  transition: all 0.3s ease;
+}
+.course-card-unit:hover .card-actions {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.small-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.small-icon-btn svg { width: 1.2rem; height: 1.2rem; }
+.btn-edit { background: #fef3c7; color: #d97706; }
+.btn-edit:hover { background: #fde68a; }
+.btn-delete { background: #fee2e2; color: #dc2626; }
+.btn-delete:hover { background: #fecaca; }
+
+.card-body { flex: 1; }
+
+.course-title-text {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+  transition: all 0.3s;
+}
+
+/* 🔴 حركة روشة: النص نفسه بياخد ألوان الثييم لما تقفي عالكارت */
+.course-card-unit:hover .course-title-text {
+  background: linear-gradient(90deg, #f47545 0%, #5f369e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.course-desc {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-footer {
+  padding-top: 1.5rem;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.staff-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.staff-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: #5f369e;
+}
+
+.staff-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.staff-names {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #334155;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

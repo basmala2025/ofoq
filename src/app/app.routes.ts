@@ -9,14 +9,12 @@ import { Dashboard } from './dashboard/dashboard';
 import { Home } from './home/home';
 import { Signup } from './auth/signup/signup';
 import { Login } from './auth/login/login';
-import { App } from './admin/admin-management/admin-management';
-
+import { AdminManagement } from './admin/admin-management/admin-management';
 export const routes: Routes = [
-  { path: '', redirectTo: '/home', pathMatch: 'full' },
-  { path: 'home', component: Home, canActivate: [guestGuard] },
-  { path: 'signup', component: Signup, canActivate: [guestGuard] },
-  { path: 'login', component: Login, canActivate: [guestGuard] },
-
+ { path: '', redirectTo: '/home', pathMatch: 'full' },
+ { path: 'home', component: Home, canActivate: [guestGuard] },
+ { path: 'signup', component: Signup },
+ { path: 'login', component: Login, canActivate: [guestGuard] },
   {
     path: 'dashboard',
     component: Dashboard,
@@ -55,10 +53,15 @@ export const routes: Routes = [
     canActivate: [authGuard],
     canDeactivate: [confirmExitGuard]
   },
-  { path: 'results', loadComponent: () => import('./student/results/results').then(m => m.Results), canActivate: [authGuard] },
+  // { path: 'results', loadComponent: () => import('./student/results/results').then(m => m.Results), canActivate: [authGuard] },
   { path: 'stdprofile', component: Stdprofile, canActivate: [authGuard] },
   {
     path: 'admin-dashboard',
-    component: App,
+    component: AdminManagement,
   }
+,
+  // {
+  //   path: 'dashboard-ta',
+  // }
+
 ];

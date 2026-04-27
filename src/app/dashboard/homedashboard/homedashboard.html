@@ -4,14 +4,18 @@
 </div>
 
 <div style="margin-left: 5%; margin-right: 5%;">
- <div class="course-grid">
-    @for (course of courses; track course.id) {
-        <div class="course-card" [routerLink]="['/course', course.id]">
-            <!-- <div class="course-icon">{{ course.icon }}</div> -->
-            <h3 class="course-name">{{ course.name }}</h3>
+    <div class="course-grid">
+       @for (course of dataService.courses(); track course.id) {
+    <div class="course-card" [routerLink]="['/course', course.id]" (click)="onCourseClick(course)">
+        <div class="course-content">
+            <h3 class="course-name">{{ course.title }}</h3>
             <p class="course-code">{{ course.code }}</p>
         </div>
-    }
-</div>
-
+    </div>
+} @empty {
+    <div class="no-courses">
+        <p>No courses assigned to you yet.</p>
+    </div>
+}
+    </div>
 </div>

@@ -14,10 +14,14 @@
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                     <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
-                <input type="email" id="email" formControlName="email" placeholder="name@edu.bu.eg">
+                <input
+                    type="email"
+                    id="email"
+                    formControlName="email"
+                    placeholder="name@fci.bu.edu.eg or name@edu.bu.eg">
             </div>
             @if(loginForm.get('email')?.invalid && loginForm.get('email')?.touched){
-                <span class="error-msg">Please enter a valid university email.</span>
+                <span class="error-msg">Please enter a valid Benha University email.</span>
             }
         </div>
 
@@ -46,3 +50,4 @@
 </div>
 
 <p class="copyright">© 2026 OFOQ System. All rights reserved.</p>
+ 

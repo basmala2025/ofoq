@@ -4,6 +4,7 @@ import { Chart } from 'chart.js/auto';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Navbar } from '../navbar/navbar';
+import { AudioRecordingService } from '../audio-recording.service.ts';
 
 interface Student {
   id: string;
@@ -38,10 +39,10 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
   absentStudents = 0;
   attendanceRate = 0;
   averageFocus = 75;
-
-  // Focus history for line chart
+  currentLectureId: string = '';
   focusHistory: FocusDataPoint[] = [];
   maxHistoryPoints = 20;
+  isProcessingAI: boolean = false;
 
   // Focus statistics
   minFocus = 0;
@@ -59,14 +60,19 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
   private updateInterval: any;
   private timeInterval: any;
 
-  constructor(private route: ActivatedRoute, private router: Router) {}
+  constructor(private route: ActivatedRoute, private router: Router, private audioService: AudioRecordingService) {}
 
   ngOnInit(): void {
-    const courseId = Number(this.route.snapshot.paramMap.get('id'));
+    // Capture the Lecture ID from the route parameters
+    this.currentLectureId = this.route.snapshot.paramMap.get('id') || '';
+
+    // Subscribe to query parameters for display names
     this.route.queryParams.subscribe(params => {
       this.courseName = params['course'] || 'Artificial Intelligence';
       this.roomName = params['room'] || 'A-305';
     });
+
+    console.log('👀 Captured ID in Dashboard:', this.currentLectureId);
 
     this.loadMockData();
     this.initializeFocusHistory();
@@ -164,7 +170,7 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    // 2. Attendance Pie Chart
+    // 2. Attendance (Doughnut Chart)
     this.attendanceChart = new Chart(this.attendanceChartCanvas.nativeElement, {
       type: 'doughnut',
       data: {
@@ -184,7 +190,7 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    // 3. Focus Gauge (Doughnut)
+    // 3. Focus Gauge (Semi-Doughnut)
     this.focusGaugeChart = new Chart(this.focusGaugeChartCanvas.nativeElement, {
       type: 'doughnut',
       data: {
@@ -240,29 +246,26 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   private startLiveUpdates(): void {
     this.updateInterval = setInterval(() => {
-      // Update focus with realistic variation
+      // Update focus with realistic random variation
       const change = (Math.random() - 0.5) * 8;
       this.averageFocus = Math.max(40, Math.min(95, this.averageFocus + change));
       this.averageFocus = Math.round(this.averageFocus);
 
-      // Add new data point
+      // Add new timestamped data point
       const now = new Date();
       this.focusHistory.push({
         time: this.formatTime(now),
         focus: this.averageFocus
       });
 
-      // Keep only last 20 points
+      // Keep focus history within the max points limit
       if (this.focusHistory.length > this.maxHistoryPoints) {
         this.focusHistory.shift();
       }
 
-      // Calculate statistics
       this.calculateFocusStats();
-
-      // Update charts
       this.updateCharts();
-    }, 3000); // Update every 3 seconds
+    }, 3000); // Trigger update every 3 seconds
   }
 
   private calculateFocusStats(): void {
@@ -270,7 +273,7 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.minFocus = Math.round(Math.min(...recentFocus));
     this.maxFocus = Math.round(Math.max(...recentFocus));
 
-    // Calculate trend
+    // Calculate trend based on comparison of averages
     if (recentFocus.length >= 5) {
       const firstHalf = recentFocus.slice(0, 5).reduce((a, b) => a + b, 0) / 5;
       const secondHalf = recentFocus.slice(5).reduce((a, b) => a + b, 0) / 5;
@@ -282,12 +285,12 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private updateCharts(): void {
-    // Update Line Chart
+    // Refresh Line Chart Data
     this.focusLineChart.data.labels = this.focusHistory.map(h => h.time);
     this.focusLineChart.data.datasets[0].data = this.focusHistory.map(h => h.focus);
     this.focusLineChart.update('none');
 
-    // Update Gauge
+    // Refresh Gauge Chart Data
     this.focusGaugeChart.data.datasets[0].data = [this.averageFocus, 100 - this.averageFocus];
     this.focusGaugeChart.update('none');
   }
@@ -302,6 +305,7 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
     }, 1000);
   }
 
+  // Helpers for dynamic styling in the template
   getFocusColor(): string {
     if (this.averageFocus >= 80) return '#10b981';
     if (this.averageFocus >= 60) return '#22c55e';
@@ -322,10 +326,13 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   endSession(): void {
+    this.isProcessingAI = true;
+
+    // Clear background timers
     clearInterval(this.updateInterval);
     clearInterval(this.timeInterval);
 
-    const summary = {
+    const sessionData = {
       courseName: this.courseName,
       roomName: this.roomName,
       totalStudents: this.totalStudents,
@@ -338,8 +345,8 @@ export class LiveDashboard implements OnInit, AfterViewInit, OnDestroy {
       focusHistory: this.focusHistory
     };
 
-    // هذا هو السطر الذي يربط بين الداشبورد والملخص
-    this.router.navigate(['/summary'], { state: { summary } });
+    // Stop recording and transmit the session report
+    this.audioService.stopRecordingAndSend(sessionData, this.currentLectureId as any);
   }
 
   ngOnDestroy(): void {

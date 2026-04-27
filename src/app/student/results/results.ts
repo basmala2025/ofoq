@@ -30,7 +30,6 @@ export class Results implements OnInit {
   }
 
   loadRealResults() {
-    // قراءة البيانات التي تم حفظها عند ضغط زر Submit في ExamEditor
     const data = localStorage.getItem('ofoq_last_result');
     if (data) {
       const parsed = JSON.parse(data);
@@ -42,7 +41,6 @@ export class Results implements OnInit {
       this.testCases = parsed.testCases;
       this.violations = parsed.violations;
     } else {
-      // إذا حاول الطالب دخول الصفحة يدوياً بدون امتحان
       this.router.navigate(['/dashboardstudent']);
     }
   }
@@ -59,7 +57,6 @@ export class Results implements OnInit {
   }
 
   goHome() {
-    // مسح الداتا المؤقتة عند الخروج للداش بورد
     localStorage.removeItem('ofoq_last_result');
     this.router.navigate(['/dashboardstudent'], { replaceUrl: true });
   }

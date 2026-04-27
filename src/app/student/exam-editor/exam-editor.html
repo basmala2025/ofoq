@@ -14,7 +14,6 @@
 
   <header class="exam-header">
     <div class="brand">
-      <!-- <div class="logo-icon"><mat-icon>code</mat-icon></div> -->
       <div class="title-group">
         <h1>Technical Assessment</h1>
         <span class="status-tag"><mat-icon>security</mat-icon> Secure Environment</span>
@@ -33,6 +32,7 @@
   </header>
 
   <main class="dashboard-body">
+
     <aside class="side-panel">
       <section class="panel-section">
         <h3><mat-icon>description</mat-icon> Problem Description</h3>
@@ -44,7 +44,7 @@
       <section class="panel-section rules-section">
         <h3><mat-icon>gavel</mat-icon> Security Rules</h3>
         <ul class="rules-list">
-          <li><mat-icon>center_focus_strong</mat-icon> Keep eyes on screen <span>(5s max)</span></li>
+          <li><mat-icon>center_focus_strong</mat-icon> Keep eyes on screen <span>(Strict Tracking)</span></li>
           <li><mat-icon>tab</mat-icon> No tab switching <span>(Immediate Alarm)</span></li>
           <li><mat-icon>content_copy</mat-icon> Copy/Paste disabled <span>(Warning)</span></li>
         </ul>
@@ -76,7 +76,7 @@
 
   <div class="camera-widget" [class.alarm-glow]="isRedAlarm">
     <div class="video-container">
-      <video #videoElement autoplay muted playsinline></video>
+      <video #videoElement autoplay [muted]="true" playsinline></video>
       <div class="ai-overlay">
         <div class="ai-badge" [class.active]="cvActive">
           <span class="dot"></span> AI LIVE
@@ -84,13 +84,23 @@
       </div>
     </div>
   </div>
-<div class="editor-actions">
-  <button class="run-btn" (click)="runCode()">
-    <mat-icon>play_arrow</mat-icon> Run Code
-  </button>
 
-  <button class="finish-btn" (click)="submitSolution()">
-    Submit Exam
-  </button>
-</div>
+  <div class="editor-actions">
+    <button class="run-btn" (click)="runCode()">
+      <mat-icon>play_arrow</mat-icon> Run Code
+    </button>
+
+    <!-- <button (click)="testSingleAudio()" style="background: #ff9800; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+      <mat-icon style="font-size: 18px; vertical-align: middle;">mic</mat-icon> Test Audio (5s)
+    </button> -->
+
+    <button (click)="triggerViolentAlarm('TEST: Cheating attempt detected!')" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+      <mat-icon style="font-size: 18px; vertical-align: middle;">warning</mat-icon> Trigger Alarm
+    </button>
+
+    <button class="finish-btn" (click)="submitSolution()">
+      Submit Exam
+    </button>
+  </div>
+
 </div>

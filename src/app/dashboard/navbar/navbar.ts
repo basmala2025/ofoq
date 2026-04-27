@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, RouterLink } from "@angular/router";
-import { CommonModule } from '@angular/common'; // مهم جداً لاستخدام *ngIf
+import { CommonModule } from '@angular/common'; 
 
 @Component({
   selector: 'app-navbar',
@@ -21,7 +21,6 @@ export class Navbar implements OnInit {
     this.loadUser();
   }
 
-  // دالة للتحقق من حالة تسجيل الدخول لاستخدامها في الـ HTML
   isLoggedIn(): boolean {
     return !!localStorage.getItem('userToken');
   }
@@ -59,19 +58,15 @@ export class Navbar implements OnInit {
     return parts.length >= 2 ? `${parts[0]} ${parts[1]}` : (parts[0] || 'User');
   }
 
-  // دالة الخروج المحدثة
   logout(): void {
-    // 1. مسح كل بيانات الجلسة
     localStorage.removeItem('currentUser');
-    localStorage.removeItem('userToken'); // ضروري جداً لتعطيل الـ AuthGuard
+    localStorage.removeItem('userToken');
 
-    // 2. تصفير المتغيرات المحلية
     this.displayName = '';
     this.userRole = '';
     this.fullName = '';
     this.initials = '';
 
-    // 3. التوجيه لصفحة الـ Login مع منع الرجوع للخلف
     this.router.navigate(['/login'], { replaceUrl: true });
 
     console.log('Logged out and history cleared.');

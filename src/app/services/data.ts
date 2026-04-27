@@ -1,106 +1,92 @@
-import { Injectable } from '@angular/core';
+import { HttpHeaders } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { delay, tap, catchError } from 'rxjs/operators';
-import { Course, DoctorProfile, Session, User } from '../models/data.model';
+import { tap, map } from 'rxjs/operators';
+import { Course, Session } from '../models/data.model';
 
-@Injectable({ providedIn: 'root' })
-export class Data {
-  private USERS_KEY = 'ofoq_users_db';
-  private COURSES_KEY = 'ofoq_courses_db';
-  private apiUrl = 'http://localhost:3000/api';
+@Injectable({
+  providedIn: 'root'
+})
+export class DataService {
+  private http = inject(HttpClient);
 
-  // بيانات الجلسات للعرض (Mock Data)
-  private mockSessions: Session[] = [
-    { id: 101, courseId: 1, date: 'Dec 20, 2025', duration: '90 min', attendance: '95%', focus: '87%', focusLevel: 'High' }
-  ];
+  // 1. Base URL for the Backend API
+  private baseUrl = 'https://ofoqai.runasp.net/api';
 
-  constructor(private http: HttpClient) {
-    // تشغيل التهيئة بمجرد بدء الخدمة
-    this.initializeStorage();
-  }
+  // 2. Signal to store and manage the courses state
+  courses = signal<Course[]>([]);
+
+  constructor() { }
 
   /**
-   * تهيئة الـ LocalStorage بالبيانات الافتراضية إذا كان فارغاً
+   * Fetches courses assigned to the current user and maps the response
+   * to ensure compatibility with the frontend 'id' property.
    */
-  private initializeStorage() {
-    if (!localStorage.getItem(this.COURSES_KEY)) {
-      const defaultCourses = [
-        { id: 1, name: 'Data Structures', code: 'CS201', icon: 'DS', professor: 'Dr. Ahmed Hassan' }
-      ];
-      localStorage.setItem(this.COURSES_KEY, JSON.stringify(defaultCourses));
-    }
+  loadAssignedCourses() {
+    return this.http.get<any>(`${this.baseUrl}/Courses/assigned`).pipe(
+      map(response => {
+        // 1. Extract the array from various possible response structures
+        let coursesArray = [];
+        if (Array.isArray(response)) {
+          coursesArray = response;
+        } else {
+          coursesArray = response.courses ? response.courses : (response.data ? response.data : []);
+        }
 
-    if (!localStorage.getItem(this.USERS_KEY)) {
-      const defaultAdmin = [
-        { id: '1', fullName: 'Basmala Admin', email: 'admin@ofoq.com', userType: 'super_admin', status: 'active', enrolledCourses: [] }
-      ];
-      localStorage.setItem(this.USERS_KEY, JSON.stringify(defaultAdmin));
-    }
-  }
-
-  /**
-   * إدارة المستخدمين (Users Management)
-   */
-  getUsers(): User[] {
-    return JSON.parse(localStorage.getItem(this.USERS_KEY) || '[]');
-  }
-
-  deleteUser(userId: string): void {
-    let users = this.getUsers();
-    users = users.filter(user => user.id !== userId);
-    localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
-    console.log(`OFOQ: User ${userId} removed.`);
-  }
-
-  /**
-   * إرسال دعوة (Invite User)
-   * قمت بتعديلها لتعمل بالمحاكاة إذا فشل السيرفر، لمنع تعليق المتصفح
-   */
-  inviteNewUser(email: string, role: string): Observable<any> {
-    const payload = { email, role, invitedAt: new Date(), platform: 'OFOQ' };
-
-    // محاولة الإرسال للباك إند الحقيقي
-    return this.http.post(`${this.apiUrl}/users/invite`, payload).pipe(
-      catchError((error) => {
-        // إذا كان السيرفر غير موجود (بورت 3000 مغلق)، نقوم بالمحاكاة فوراً
-        console.warn('OFOQ Backend not found. Running in Simulation Mode...');
-
-        // محاكاة استجابة ناجحة بعد ثانية واحدة لتهدئة الـ CPU
-        return of({ status: 'success', message: 'Simulated success' }).pipe(delay(1000));
+        // 2. Mapping logic: Ensure every course object has an 'id' property
+        return coursesArray.map((c: any) => {
+          return {
+            ...c, // Spread existing properties
+            id: c.courseId || c.id // Ensure 'id' exists whether backend sends courseId or id
+          };
+        });
+      }),
+      tap((coursesData: Course[]) => {
+        console.log('✅ Assigned Courses Mapped:', coursesData);
+        this.courses.set(coursesData);
       })
     );
   }
 
   /**
-   * إدارة الكورسات والجلسات
+   * Creates a new lecture for a specific course using FormData.
+   * Includes a dummy PDF file to satisfy backend requirements for file uploads.
    */
-  getCourses(): Course[] {
-    return JSON.parse(localStorage.getItem(this.COURSES_KEY) || '[]');
-  }
+  createLecture(courseId: string) {
+    const formData = new FormData();
 
-  getCourseById(id: number): Course | undefined {
-return this.getCourses().find(c => String(c.id) === String(id));  }
+    // 1. Textual fields
+    formData.append('title', `Lecture - ${new Date().toLocaleDateString()}`);
+    formData.append('description', 'AI Session Initiation');
+    formData.append('lectureDate', new Date().toISOString());
 
-  getSessionsByCourse(courseId: number): Session[] {
-    return this.mockSessions.filter(s => s.courseId === courseId);
+    // 2. Dummy File Creation: Generates a minimal valid-header PDF blob
+    const pdfContent = "%PDF-1.4\n1 0 obj\n<< /Title (Dummy PDF) >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF";
+    const dummyFile = new File([pdfContent], "lecture_start.pdf", { type: "application/pdf" });
+
+    // 3. Append the dummy file to the 'file' field
+    formData.append('file', dummyFile);
+
+    console.log('📤 Sending FormData with a dummy PDF file...');
+
+    return this.http.post<any>(`${this.baseUrl}/courses/${courseId}/lectures`, formData);
   }
 
   /**
-   * بيانات البروفايل (Profile Data)
+   * Synchronously finds a course from the local signal state by its ID.
    */
-  getDoctorProfile(): DoctorProfile {
-    return {
-      name: 'Dr. Ahmed Hassan',
-      fullName: 'Dr. Ahmed Hassan Mohamed',
-      email: 'ahmed.hassan@ofoq.edu',
-      department: 'CS',
-      position: 'Professor',
-      avatar: 'AH'
-    };
+  getCourseById(id: string): Course | undefined {
+    const allCourses = this.courses();
+    // Uses the 'id' property defined in the local model
+    return allCourses.find(c => c.id === id);
   }
 
-  updatePassword(current: string, newP: string): Observable<boolean> {
-    return of(true).pipe(delay(800));
+  /**
+   * Retrieves past sessions for a specific course.
+   * Currently returns an empty array as a placeholder for future API integration.
+   */
+  getSessionsByCourse(courseId: string): Session[] {
+    // TODO: Implement HTTP GET request when the Sessions API is ready
+    return [];
   }
 }

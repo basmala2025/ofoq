@@ -4,7 +4,6 @@ import { Chart } from 'chart.js/auto';
 import { CommonModule } from '@angular/common';
 import { Navbar } from '../navbar/navbar';
 
-// تم إضافة export هنا لإصلاح خطأ TS2395
 export interface SessionSummary {
   courseName: string;
   roomName: string;

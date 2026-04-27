@@ -155,7 +155,24 @@ input {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
 }
+.read-only-field {
+    background-color: #f0f4f8;
+    cursor: not-allowed;
+    border-color: #cbd5e1 !important;
+}
 
+.read-only-field input {
+    color: #64748b;
+    cursor: not-allowed;
+}
+
+.invitation-msg {
+    text-align: center;
+    color: #4f46e5;
+    font-weight: 600;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
 .submit-btn {
     width: 100%;
     padding: 14px;

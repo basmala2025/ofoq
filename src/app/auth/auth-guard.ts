@@ -3,40 +3,47 @@ import { Router, CanActivateFn } from '@angular/router';
 
 export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const token = localStorage.getItem('userToken');
+  const token = localStorage.getItem('token');
 
   return token ? true : router.createUrlTree(['/login']);
 };
 
 export const guestGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const token = localStorage.getItem('userToken');
-  const userRole = localStorage.getItem('userRole');
+  const token = localStorage.getItem('token');
 
-  if (token && userRole) {
-    const target = userRole === 'student' ? '/courses' : '/dashboard';
-    return router.createUrlTree([target]);
+  const savedRole = localStorage.getItem('role')?.toLowerCase();
+
+  if (token && savedRole) {
+    if (savedRole === '3' || savedRole.includes('admin')) return router.createUrlTree(['/admin-dashboard']);
+    if (savedRole === '2' || savedRole.includes('prof')) return router.createUrlTree(['/dashboard']);
+    if (savedRole === '1' || savedRole === 'ta') return router.createUrlTree(['/dashboard-ta']);
+
+    return router.createUrlTree(['/dashboardstudent']);
   }
   return true;
-
-
 };
 
 export const roleGuard: CanActivateFn = (route) => {
   const router = inject(Router);
-  const userRole = localStorage.getItem('userRole');
-  const expectedRole = route.data['role'];
 
-  if (userRole === expectedRole) {
+  const savedRole = localStorage.getItem('role')?.toLowerCase() || '';
+  const expectedRole = route.data['role']?.toLowerCase();
+
+  let normalizedRole = 'student';
+  if (savedRole === '3' || savedRole.includes('admin')) normalizedRole = 'admin';
+  else if (savedRole === '2' || savedRole.includes('prof')) normalizedRole = 'professor';
+  else if (savedRole === '1' || savedRole === 'ta') normalizedRole = 'ta';
+  else if (savedRole === '0' || savedRole.includes('std')) normalizedRole = 'student';
+
+  if (normalizedRole === expectedRole) {
     return true;
   }
 
-if (userRole?.toLowerCase() === expectedRole?.toLowerCase()) {
-    return true;
-}
-  if (userRole === 'student') return router.createUrlTree(['/courses']);
-  if (userRole === 'professor') return router.createUrlTree(['/dashboard']);
-  if (userRole === 'super_admin') return router.createUrlTree(['/admin-dashboard']);
+  if (normalizedRole === 'admin') return router.createUrlTree(['/admin-dashboard']);
+  if (normalizedRole === 'professor') return router.createUrlTree(['/dashboard']);
+  if (normalizedRole === 'ta') return router.createUrlTree(['/dashboard-ta']);
+  if (normalizedRole === 'student') return router.createUrlTree(['/dashboardstudent']);
 
   localStorage.clear();
   return router.createUrlTree(['/login']);
